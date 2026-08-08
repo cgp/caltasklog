@@ -31,9 +31,11 @@ Use this ordering when generating or editing CalTaskLog plans:
 
 ```text
 @timezone=Area/City
-! Schedule name - Start date - End date
+! Schedule name (Default resource) - Start date - End date
+!% Event schedule 2026
 
 Date or date range[,rrule=RULE]: Task name (Resource, Resource) [Status - note] #color {{https://link}}
+%Date or date range: Event name [cancelled]
 ```
 
 All metadata after the task name is optional. The canonical task detail order is:
@@ -47,10 +49,10 @@ All metadata after the task name is optional. The canonical task detail order is
 In compact form, square brackets below mean an optional grammar component; literal square brackets used for status are shown inside quotes:
 
 ```text
-task-line    := indentation task-prefix ":" task-detail
+item-line    := indentation ["%"] task-prefix ":" item-detail
 task-prefix  := [date-or-range [time-range] | integer duration-unit] [",rrule=" rrule]
 duration-unit := "day" | "days" | "week" | "weeks"
-task-detail  := name [resources] [status-block] [color] [link]
+item-detail  := name [resources] [status-block] [color] [link]
 resources    := "(" resource ["," resource ...] ")"
 status-block := "[" status [" - " note] "]"
 color        := "#" followed by 3, 6, or 8 hexadecimal digits
@@ -65,6 +67,10 @@ The parser tolerates some metadata in a different order, but users and code gene
 |---|---|---|---|
 | Calendar timezone | `@timezone=Area/City` | `@timezone=America/New_York` | Sets the timezone for current-date behavior across the document |
 | Named schedule | `! name - start - end` | `! Offseason - Aug 7, 2026 - Jan 5` | Starts a schedule section and optionally defines its range |
+| Schedule resource | `! name (resource) year` | `! Website Launch (Bob) 2026` | Supplies a default resource to items without one |
+| Year-anchored schedule | `! name year` | `! Tasks 2026` | Anchors yearless items while deriving the displayed range from them |
+| Event schedule | `!% name year` or `!% name - start - end` | `!% Holidays 2026` | Marks every item in the section as an event |
+| Individual event | `%date-or-range: detail` | `%Aug 20: Party` | Adds a planning event to a normal task schedule |
 | Dated task | `date-or-range: detail` | `Aug 7-10: Shooter Move (CAD)` | Work occupying an inclusive calendar range |
 | Timed task | `date time-time: detail` | `Aug 7 2:30-3:30p: Chassis Design` | Stores optional wall-clock time on a single date |
 | Repeating task | `date,rrule=RULE: detail` | `Aug 25,rrule=FREQ=WEEKLY;BYDAY=MO,WE,FR: AI Meeting` | Expands a dated task using iCalendar recurrence fields |
@@ -81,10 +87,15 @@ A named schedule begins with `!` at the start of a line.
 ```text
 ! Offseason - Aug 7, 2026 - Jan 5
 ! Build Season
+! Tasks (Bob) 2026
+!% Birthdays & Holidays 2026
 ```
 
 - A declaration starts a new schedule section. Following task lines belong to that schedule until the next `!` declaration.
+- A schedule may declare one or more default resources in parentheses. Both `! Project (Bob) 2026` and `! Project 2026 (Bob)` are accepted.
 - A schedule may provide both a start and end date or omit both dates.
+- A trailing year without a date range anchors yearless items to that year. The displayed range is still derived from the section's dated items.
+- The separator before a full date range is optional, so both `! Holidays - Jan 1 2026 - Dec 31` and `! Holidays Jan 1 2026 - Dec 31` are accepted.
 - If an explicit range is supplied, it controls the visible range for that schedule.
 - If only one endpoint contains a year, CalTaskLog infers the other year. In the Offseason example, `Jan 5` becomes January 5, 2027 because it follows August 7, 2026.
 - If both endpoints omit their years, the start uses the current year in the configured timezone. The end rolls into the following year only when the written range would otherwise run backward.
@@ -94,6 +105,29 @@ A named schedule begins with `!` at the start of a line.
 - Tasks entirely outside an explicit schedule range are reported as errors.
 
 If the document contains tasks but no `!` declarations, CalTaskLog creates one implicit default schedule. The schedule selector is hidden in that case.
+
+### Events versus tasks
+
+Use `!%` to make an entire schedule an event schedule. Inside a normal `!` schedule, prefix an individual line with `%` to make only that item an event.
+
+```text
+!% Community Events 2026
+Aug 8: Open house
+Aug 31: Picnic [cancelled]
+Sep 8: Workshop [rescheduled - TBD]
+
+! Project 2026
+:Do a thing
+%Aug 20: Launch party
+:Do another thing
+```
+
+- Events remain visible in Gantt and Calendar for planning. Timeline shows only events that are still upcoming or in progress.
+- Events are excluded from Today, Groups, and Tasks.
+- Items in an event schedule may still be nested. In a normal task schedule, `%` applies only to the line carrying it, allowing task and event hierarchies to be mixed deliberately.
+- An event is considered complete after its end date passes. A canceled event is also terminal. Completed events are visually subdued in planning views.
+- `canceled` and `cancelled` are both recognized. Canceled labels are struck through; rescheduled labels retain their status and receive a dashed treatment.
+- Events use the same dates, times, RRULEs, colors, links, metadata, indentation, and colon requirement as tasks.
 
 ### Dated tasks and events
 
@@ -228,13 +262,15 @@ Resources are comma-separated names in trailing parentheses.
 ```text
 Aug 10-12: Shooter Move (CAD)
 Aug 10-12: Field Assembly (Mechanical, Electrical)
+! Website Launch (Bob) 2026
 ```
 
 - Resources are stored as a list after trimming whitespace.
 - Tasks with multiple resources may be repeated in multiple resource/group lanes.
-- The Tasks view shows only resources explicitly written on that task.
-- Today inherits resources from the nearest ancestor when a task has no explicit resource. If no ancestor supplies one, the task is placed in `Unassigned`.
-- The Groups view currently does not inherit ancestor resources; a task without an explicit resource appears in `Unassigned` there.
+- An item-level resource overrides the schedule default.
+- Tasks displays the item-level resource, then the schedule default when the item has none.
+- Today uses the item-level resource, then the nearest explicitly assigned ancestor, then the schedule default, and finally `Unassigned`.
+- Groups does not inherit ancestor resources, but it does use the schedule default before falling back to `Unassigned`.
 
 ### Status and note
 
@@ -338,6 +374,8 @@ After filtering:
 Gantt is the continuous schedule view.
 
 - It includes every selected task with both a start and end date: dated tasks, resolved duration tasks, and derived summary parents.
+- Completed events are omitted using the same rules as Timeline: past end date, Done/Complete/Completed, or canceled/cancelled.
+- Empty months wholly before the current month are removed from the horizontal scale. Enable **Show empty past months** to restore them.
 - Undated tasks are omitted.
 - Rows remain in merged source order and retain indentation.
 - The horizontal scale is fixed at 30 pixels per calendar day.
@@ -353,11 +391,13 @@ Gantt is the continuous schedule view.
 
 Timeline is a dense month-per-row representation.
 
-- Every month in the selected overall range receives one stacked section.
+- Every visible month in the selected overall range receives one stacked section.
+- Empty past months are omitted by default. Enable **Show empty past months** to restore their sections.
 - Every day has the same width across every month, based on a 31-day row.
 - A 31-day month fills the available date width. A 30-day or February row ends after its final day and leaves blank space on the right.
 - Month rows repeat date numbers and weekday initials. Weekends are shaded.
 - Only root tasks receive named rows.
+- Events are omitted once their end date has passed or their status is Done, Complete, Completed, canceled, or cancelled. Their task and event descendants remain eligible and are promoted when no visible ancestor remains.
 - A root task with no children renders as a solid range line or a single-day milestone.
 - A root task with children renders as a translucent outlined parent container.
 - Inside a parent container, CalTaskLog renders the deepest dated descendants: a dated descendant is omitted when it has another dated descendant below it.
@@ -382,6 +422,7 @@ Calendar is a Google Calendar-style schedule with Month, 7-day, and 4-day views.
 Groups is a resource-oriented Gantt view across the full continuous schedule.
 
 - Only scheduled leaf-most work is shown. A dated task is excluded when it has another dated descendant, preventing parent and child bars from duplicating the same work.
+- Past months with no grouped tasks are removed from the horizontal scale unless **Show empty past months** is enabled.
 - Resources come only from the task's own parentheses in this view; they are not inherited.
 - Tasks with no explicit resource appear under `Unassigned`.
 - Tasks with multiple resources appear in every named group.
@@ -393,7 +434,7 @@ Groups is a resource-oriented Gantt view across the full continuous schedule.
 
 ### Tasks
 
-Tasks is the complete inventory and is the only unfiltered task view.
+Tasks is the complete task inventory. Events are deliberately omitted.
 
 - Every parsed task appears, including dated, duration, summary, and undated tasks.
 - Rows remain in source order.
@@ -423,6 +464,7 @@ Timing is calculated as follows:
 | Repeating task occurrence | Derived from RRULE | Same Today rules | Yes | Yes | Yes | Yes when leaf-most | Yes |
 | Undated task | Source | Only with explicit active status | No | No | No | No | Yes |
 | Done task | Source | No | Yes when dated | Yes when dated | Yes when dated | Yes when dated and leaf-most | Yes |
+| Event | Source | No | Until completed | Until completed | Yes when dated | No | No |
 | Comment | Source only | No | No | No | No | No | No |
 
 ## Implementation notes

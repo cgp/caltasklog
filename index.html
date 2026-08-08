@@ -68,6 +68,10 @@
     .schedule-option input { margin: 2px 0 0; accent-color: #0b5ea8; }
     .schedule-option strong { display: block; color: #263840; font-size: 12px; line-height: 1.25; }
     .schedule-option small { display: block; margin-top: 2px; color: #78858c; font-size: 10px; }
+    .past-month-toggle { display: none; align-items: center; gap: 7px; margin: 0 0 0 auto; padding: 0 13px; border-left: 1px solid #d6dde2; color: #52616a; font-size: 11px; font-weight: 750; white-space: nowrap; cursor: pointer; }
+    .past-month-toggle.show { display: flex; }
+    .past-month-toggle input { width: 15px; height: 15px; margin: 0; accent-color: #0b5ea8; }
+    .past-month-toggle + .schedule-picker { margin-left: 0; }
     .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(23,107,77,.22); outline-offset: 2px; }
 
     .panel { display: none; }
@@ -147,6 +151,10 @@
     .task-name-link::after { content: " ↗"; font-size: 9px; }
     .task-name-link:hover { color: #003f7a; text-decoration-thickness: 2px; }
     .task-label.is-parent .task-name { font-weight: 850; }
+    .task-label.event-complete, .cal-row.event-complete { opacity: .68; }
+    .task-label.event-cancelled .task-name, .cal-row-label.event-cancelled { text-decoration: line-through; }
+    .bar.event-complete, .cal-milestone.event-complete, .cal-standalone.event-complete, .cal-child.event-complete { opacity: .68; }
+    .bar.event-rescheduled, .cal-standalone.event-rescheduled, .cal-child.event-rescheduled { outline: 1px dashed #fff; outline-offset: -3px; }
     .people { display: none; }
     .person { font-size: 10px; color: var(--muted); background: #f0f2ee; border-radius: 999px; padding: 3px 7px; }
     .track { position: relative; min-height: var(--row-height); overflow: hidden; background-color: #fff; background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(var(--day-width) - 1px), rgba(184,204,217,.6) calc(var(--day-width) - 1px), rgba(184,204,217,.6) var(--day-width)), repeating-linear-gradient(90deg, transparent 0, transparent calc(var(--day-width) * 5), rgba(219,225,229,.72) calc(var(--day-width) * 5), rgba(219,225,229,.72) calc(var(--day-width) * 7)), repeating-linear-gradient(0deg, transparent 0, transparent 5px, rgba(189,205,215,.16) 5px, rgba(189,205,215,.16) 6px); background-position: 0 0, var(--week-offset, 0px) 0, 0 0; }
@@ -227,6 +235,9 @@
     .month-day.today .month-date span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #0b5ea8; color: #fff; }
     .calendar-event { position: absolute; z-index: 2; top: var(--event-top); left: calc(var(--event-column) * 100% / var(--calendar-columns) + 3px); width: calc(var(--event-span) * 100% / var(--calendar-columns) - 6px); height: 19px; padding: 2px 6px; border-radius: 4px; background: var(--event-color); color: var(--event-text, #fff); box-shadow: 0 1px 2px rgba(20,42,55,.18); font-size: 10px; font-weight: 800; line-height: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
     .calendar-event.parent-event { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28), 0 1px 2px rgba(20,42,55,.14); font-weight: 900; }
+    .calendar-event.event-complete { opacity: .68; }
+    .calendar-event.event-cancelled { text-decoration: line-through; }
+    .calendar-event.event-rescheduled { outline: 1px dashed currentColor; outline-offset: -3px; }
     .calendar-event.continues-before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
     .calendar-event.continues-after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
     a.calendar-event:hover { filter: brightness(.92); text-decoration: underline; }
@@ -350,6 +361,7 @@
         <button class="tab" id="groups-tab" role="tab" aria-selected="false" aria-controls="groups-panel">Groups</button>
         <button class="tab" id="tasks-tab" role="tab" aria-selected="false" aria-controls="tasks-panel">Tasks</button>
       </div>
+      <label class="past-month-toggle" id="past-month-control"><input type="checkbox" id="show-empty-past-months">Show empty past months</label>
       <details class="schedule-picker" id="schedule-picker">
         <summary class="schedule-toggle"><span id="schedule-picker-label">Schedules</span></summary>
         <div class="schedule-menu" id="schedule-menu" role="group" aria-label="Displayed schedules"></div>
@@ -361,7 +373,7 @@
         <div class="editor-head">
           <div>
             <p class="eyebrow">Build your timeline</p>
-            <p class="lede">One task per line. Dates, hierarchy, and colors turn into a clear schedule instantly.</p>
+            <p class="lede">One task or event per line. Dates, hierarchy, and colors turn into a clear schedule instantly.</p>
           </div>
           <div class="status" id="save-status">Saved on this device</div>
         </div>
@@ -378,9 +390,9 @@
           <div class="editor-foot">
             <div class="syntax" id="syntax-help">
               <strong>Format:</strong> <code>Aug 10-12: Task name (Owner) #176b4d</code><br>
-              Every task uses a colon. Leave the date blank for a structural or undated task, or use <code>2 days:</code> / <code>3 weeks:</code> for relative duration.<br>
+              Every task or event uses a colon. Leave the date blank for a structural or undated task, or use <code>2 days:</code> / <code>3 weeks:</code> for relative duration.<br>
               Add time with <code>Aug 7 2:30-3:30p:</code>, recurrence with <code>,rrule=FREQ=WEEKLY;BYDAY=MO,WE</code>, and a calendar timezone with <code>@timezone=America/New_York</code>.<br>
-              Schedules still use <code>! Offseason - Aug 7 - Jan 5</code>. Add <code>[In Progress - note]</code>, <code>{{https://…}}</code>, or a color as needed.
+              Use <code>! Tasks (Bob) 2026</code> for a year-anchored schedule with a default resource, <code>!% Events 2026</code> for an event schedule, or prefix one event with <code>%</code>. Add <code>[In Progress - note]</code>, <code>{{https://…}}</code>, or a color as needed.
             </div>
             <button class="btn btn-primary" id="build-button">Build Gantt →</button>
           </div>
@@ -469,6 +481,7 @@
       let selectedScheduleIds = null;
       let calendarViewDate = null;
       let calendarViewMode = 'month';
+      let showEmptyPastMonths = false;
       const DEFAULT_ITEMS = `@timezone=America/New_York
 ! Offseason - Aug 7 - Jan 5
 :Kettering
@@ -493,6 +506,7 @@ Mar 10: Competition`;
         tasksTable: document.querySelector('#tasks-table'), tasksSummary: document.querySelector('#tasks-summary'),
         todayTable: document.querySelector('#today-table'), todaySummary: document.querySelector('#today-summary'),
         groupsChart: document.querySelector('#groups-chart'), groupsSummary: document.querySelector('#groups-summary'),
+        pastMonthControl: document.querySelector('#past-month-control'), showEmptyPastMonths: document.querySelector('#show-empty-past-months'),
         schedulePicker: document.querySelector('#schedule-picker'), scheduleMenu: document.querySelector('#schedule-menu'), schedulePickerLabel: document.querySelector('#schedule-picker-label'),
         editTab: document.querySelector('#edit-tab'), todayTab: document.querySelector('#today-tab'), displayTab: document.querySelector('#display-tab'), timelineTab: document.querySelector('#timeline-tab'), calendarTab: document.querySelector('#calendar-tab'), groupsTab: document.querySelector('#groups-tab'), tasksTab: document.querySelector('#tasks-tab'),
         editPanel: document.querySelector('#edit-panel'), todayPanel: document.querySelector('#today-panel'), displayPanel: document.querySelector('#display-panel'), timelinePanel: document.querySelector('#timeline-panel'), calendarPanel: document.querySelector('#calendar-panel'), groupsPanel: document.querySelector('#groups-panel'), tasksPanel: document.querySelector('#tasks-panel')
@@ -503,18 +517,26 @@ Mar 10: Competition`;
       function esc(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
       function pretty(date, includeYear = true) { return date.toLocaleDateString('en-US', {month:'short', day:'numeric', ...(includeYear ? {year:'numeric'} : {})}); }
       function isDoneStatus(status = '') { return ['done','complete','completed'].includes(status.toLowerCase()); }
+      function isCancelledStatus(status = '') { return /^cancell?ed\b/i.test(status.trim()); }
+      function isRescheduledStatus(status = '') { return /^rescheduled\b/i.test(status.trim()); }
+      function isEventComplete(task, today) { return Boolean(task.isEvent && (isDoneStatus(task.status) || isCancelledStatus(task.status) || (task.end && task.end < today))); }
+      function planningName(task) { return `${task.name}${task.isEvent && task.status ? ` [${task.status}${task.note ? ` - ${task.note}` : ''}]` : ''}`; }
+      function eventClassNames(task, today) {
+        if (!task.isEvent) return '';
+        return `${isEventComplete(task,today) ? ' event-complete' : ''}${isCancelledStatus(task.status) ? ' event-cancelled' : ''}${isRescheduledStatus(task.status) ? ' event-rescheduled' : ''}`;
+      }
       function todayForTimezone(timezone) {
         const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:timezone,year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date()).filter(part => part.type !== 'literal').map(part => [part.type,Number(part.value)]));
         return new Date(parts.year, parts.month - 1, parts.day);
       }
 
-      const SYNTAX_TOKEN = /(\{\{?https?:\/\/[^{}\s]+\}\}?|\[[^\]\n]*\]|\([^()\n]*\)|#[0-9a-fA-F]{3,8}\b|@timezone\s*=\s*[^\s]+|rrule=[^:\s]+|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)?|\b\d+\s+(?:days?|weeks?)\b|\d{1,2}(?::\d{2})?\s*[ap]?m?\s*-\s*\d{1,2}(?::\d{2})?\s*[ap]?m?|:)/gi;
+      const SYNTAX_TOKEN = /(\{\{?https?:\/\/[^{}\s]+\}\}?|\[[^\]\n]*\]|\([^()\n]*\)|#[0-9a-fA-F]{3,8}\b|@timezone\s*=\s*[^\s]+|!%|%|rrule=[^:\s]+|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)?|\b\d+\s+(?:days?|weeks?)\b|\d{1,2}(?::\d{2})?\s*[ap]?m?\s*-\s*\d{1,2}(?::\d{2})?\s*[ap]?m?|:)/gi;
       function syntaxClass(token) {
         if (token.startsWith('{')) return 'tok-link';
         if (token.startsWith('[')) return 'tok-status';
         if (token.startsWith('(')) return 'tok-group';
         if (token.startsWith('#')) return 'tok-color';
-        if (/^@timezone/i.test(token) || /^rrule=/i.test(token)) return 'tok-marker';
+        if (/^@timezone/i.test(token) || /^rrule=/i.test(token) || token.includes('%')) return 'tok-marker';
         if (token === ':') return 'tok-separator';
         if (/^\d+\s+(?:days?|weeks?)$/i.test(token)) return 'tok-duration';
         return 'tok-date';
@@ -701,14 +723,16 @@ Mar 10: Competition`;
         if (peopleMatch) detail = detail.slice(0, peopleMatch.index).trim();
         takeColor();
         if (color && !/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?([0-9a-fA-F]{2})?$/.test(color)) throw new Error(`Invalid color “${color}”`);
-        if (!detail) throw new Error('Task name is missing');
+        if (!detail) throw new Error('Task or event name is missing');
         return {name:detail, people, color, status, note, link};
       }
 
-      function parseLine(line, lineNumber, currentYear, depth, anchorRange = null) {
+      function parseLine(line, lineNumber, currentYear, depth, anchorRange = null, eventSchedule = false) {
         const delimiter = findTaskDelimiter(line);
-        if (delimiter < 0) throw new Error('Every task must contain a colon after its date or duration');
+        if (delimiter < 0) throw new Error('Every task or event must contain a colon after its date or duration');
         let schedule = line.slice(0,delimiter).trim();
+        const isEvent = eventSchedule || schedule.startsWith('%');
+        if (schedule.startsWith('%')) schedule = schedule.slice(1).trim();
         const detailText = line.slice(delimiter + 1).trim();
         const meta = parseTaskDetail(detailText);
         let rrule = null;
@@ -717,11 +741,11 @@ Mar 10: Competition`;
           rrule = parseRRule(schedule.slice(ruleIndex + 7));
           schedule = schedule.slice(0,ruleIndex).trim();
         }
-        if (!schedule) return {lineNumber, ...meta, depth, kind:'open', start:null, end:null, startTime:null, endTime:null, rrule, yearAnchorRange:anchorRange, unanchored:false};
+        if (!schedule) return {lineNumber, ...meta, depth, isEvent, kind:'open', start:null, end:null, startTime:null, endTime:null, rrule, yearAnchorRange:anchorRange, unanchored:false};
         const durationMatch = schedule.match(/^(\d+)\s+(days?|weeks?)$/i);
         if (durationMatch) {
           const multiplier = /^week/i.test(durationMatch[2]) ? 7 : 1;
-          return {lineNumber, ...meta, depth, kind:'duration', duration:Number(durationMatch[1]) * multiplier, start:null, end:null, startTime:null, endTime:null, rrule, yearAnchorRange:anchorRange, unanchored:false};
+          return {lineNumber, ...meta, depth, isEvent, kind:'duration', duration:Number(durationMatch[1]) * multiplier, start:null, end:null, startTime:null, endTime:null, rrule, yearAnchorRange:anchorRange, unanchored:false};
         }
         const timed = extractTimeRange(schedule);
         const [startText, endText] = splitRange(timed.dateText);
@@ -746,7 +770,7 @@ Mar 10: Competition`;
         if ((timed.startTime !== null || timed.endTime !== null) && start.getTime() !== end.getTime()) throw new Error('Times currently require a single calendar date');
         const explicitYear = startResult.explicitYear || endResult.explicitYear;
         const yearAnchorRange = explicitYear ? {start:new Date(start),end:new Date(end)} : anchorRange;
-        return {lineNumber, ...meta, depth, kind:'dated', start, end, startTime:timed.startTime, endTime:timed.endTime, rrule, yearAnchorRange, unanchored:startResult.unanchored || endResult.unanchored};
+        return {lineNumber, ...meta, depth, isEvent, kind:'dated', start, end, startTime:timed.startTime, endTime:timed.endTime, rrule, yearAnchorRange, unanchored:startResult.unanchored || endResult.unanchored};
       }
 
       function parseScheduleDate(text) {
@@ -757,11 +781,32 @@ Mar 10: Competition`;
         return dateFromParts(parts,year);
       }
 
+      function extractScheduleResources(value) {
+        let body = value.trim();
+        let match = body.match(/\s+\(([^()]*)\)\s*$/);
+        if (!match) match = body.match(/\s+\(([^()]*)\)(?=\s+(?:\d{4}|(?:-\s+)?[A-Za-z]+\s+\d))/i);
+        if (!match) return {body, people:[]};
+        const people = match[1].split(',').map(person => person.trim()).filter(Boolean);
+        if (!people.length) throw new Error('Schedule resource list is empty');
+        body = `${body.slice(0,match.index)} ${body.slice(match.index + match[0].length)}`.trim().replace(/\s{2,}/g, ' ');
+        return {body, people};
+      }
+
       function parseScheduleDeclaration(line, currentYear, lineNumber) {
-        const body = line.replace(/^!\s*/, '').trim();
+        const isEventSchedule = /^!%/.test(line);
+        const resourceInfo = extractScheduleResources(line.replace(/^!%?\s*/, '').trim());
+        const body = resourceInfo.body;
+        const schedulePeople = resourceInfo.people;
         if (!body) throw new Error('Schedule name is missing');
-        const dateTail = body.match(/^(.*?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)$/i);
-        if (!dateTail) return {title:body, start:null, end:null, explicitRange:false, yearAnchorRange:null, warnings:[]};
+        const dateTail = body.match(/^(.*?)\s+(?:-\s+)?([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)$/i);
+        if (!dateTail) {
+          const yearOnly = body.match(/^(.*?)\s+(\d{4})$/);
+          if (!yearOnly) return {title:body, start:null, end:null, explicitRange:false, yearAnchorRange:null, warnings:[], isEventSchedule, schedulePeople};
+          const title = yearOnly[1].trim();
+          const year = Number(yearOnly[2]);
+          if (!title) throw new Error('Schedule name is missing');
+          return {title, start:null, end:null, explicitRange:false, yearAnchorRange:{start:new Date(year,0,1),end:new Date(year,11,31)}, warnings:[], isEventSchedule, schedulePeople};
+        }
         const title = dateTail[1].trim();
         if (!title) throw new Error('Schedule name is missing');
         const startParts = parseScheduleDate(dateTail[2]);
@@ -776,7 +821,7 @@ Mar 10: Competition`;
         if (end < start) throw new Error(`Schedule “${title}” ends before it starts`);
         const hasYearAnchor = Boolean(startParts.year || endParts.year);
         const warnings = hasYearAnchor ? [] : [`Line ${lineNumber}: schedule “${title}” has no year anchor; using ${startYear}${endYear === startYear ? '' : `–${endYear}`}.`];
-        return {title, start, end, explicitRange:true, yearAnchorRange:hasYearAnchor ? {start:new Date(start),end:new Date(end)} : null, warnings};
+        return {title, start, end, explicitRange:true, yearAnchorRange:hasYearAnchor ? {start:new Date(start),end:new Date(end)} : null, warnings, isEventSchedule, schedulePeople};
       }
 
       function expandRecurringTask(task, rangeEnd) {
@@ -814,7 +859,7 @@ Mar 10: Competition`;
         return occurrences;
       }
 
-      function parseTaskEntries(entries, parseStart, parseEnd, scheduleId, currentYear, scheduleAnchorRange = null) {
+      function parseTaskEntries(entries, parseStart, parseEnd, scheduleId, currentYear, scheduleAnchorRange = null, eventSchedule = false) {
         const errors = [];
         const warnings = [];
         const tasks = [];
@@ -830,7 +875,7 @@ Mar 10: Competition`;
             stack.length = depth;
             const parentIndex = depth ? stack[depth - 1] : null;
             const parentAnchor = parentIndex !== null && parentIndex !== undefined ? tasks[parentIndex]?.yearAnchorRange : null;
-            const task = parseLine(line, lineNumber, currentYear, depth, parentAnchor || scheduleAnchorRange);
+            const task = parseLine(line, lineNumber, currentYear, depth, parentAnchor || scheduleAnchorRange, eventSchedule);
             task.scheduleId = scheduleId;
             task.parentIndex = parentIndex;
             tasks.push(task);
@@ -843,8 +888,9 @@ Mar 10: Competition`;
         tasks.forEach((task, i) => { if (!task.color) task.color = task.hasChildren ? '#083f6f' : PRIMARY_COLORS[i % PRIMARY_COLORS.length]; });
         tasks.forEach((task, i) => {
           if (task.kind !== 'duration') return;
-          const previous = tasks.slice(0, i).reverse().find(item => item.depth === task.depth && item.end);
-          const parent = task.parentIndex !== null ? tasks[task.parentIndex] : null;
+          const previous = tasks.slice(0, i).reverse().find(item => item.depth === task.depth && item.end && item.isEvent === task.isEvent);
+          const candidateParent = task.parentIndex !== null ? tasks[task.parentIndex] : null;
+          const parent = candidateParent?.isEvent === task.isEvent ? candidateParent : null;
           task.start = previous ? addDays(previous.end, 1) : parent?.start || parseStart;
           task.end = addDays(task.start, task.duration - 1);
         });
@@ -869,14 +915,14 @@ Mar 10: Competition`;
         for (let i = tasks.length - 1; i >= 0; i--) {
           const task = tasks[i];
           if (task.kind !== 'summary') continue;
-          const descendants = tasks.filter((candidate, j) => j > i && candidate.start && candidate.end && belongsTo(candidate, i));
+          const descendants = tasks.filter((candidate, j) => j > i && candidate.isEvent === task.isEvent && candidate.start && candidate.end && belongsTo(candidate, i));
           if (!descendants.length) continue;
           task.start = new Date(Math.min(...descendants.map(item => item.start.getTime())));
           task.end = new Date(Math.max(...descendants.map(item => item.end.getTime())));
         }
         tasks.forEach((task, index) => {
-          if (!task.hasChildren || !isDoneStatus(task.status)) return;
-          const unfinished = tasks.filter((candidate, candidateIndex) => candidateIndex !== index && belongsTo(candidate, index) && !isDoneStatus(candidate.status));
+          if (task.isEvent || !task.hasChildren || !isDoneStatus(task.status)) return;
+          const unfinished = tasks.filter((candidate, candidateIndex) => !candidate.isEvent && candidateIndex !== index && belongsTo(candidate, index) && !isDoneStatus(candidate.status));
           if (!unfinished.length) return;
           warnings.push(`Line ${task.lineNumber}: “${task.name}” is Done, but ${unfinished.length} subtask${unfinished.length === 1 ? ' is' : 's are'} not.`);
         });
@@ -900,7 +946,7 @@ Mar 10: Competition`;
         const inferenceEnd = new Date(inferenceStart.getFullYear() + 1, inferenceStart.getMonth(), inferenceStart.getDate());
 
         const sections = [];
-        let current = {id:'default', title:'Default schedule', named:false, entries:[], start:null, end:null, explicitRange:false, errors:[], warnings:[]};
+        let current = {id:'default', title:'Default schedule', named:false, entries:[], start:null, end:null, explicitRange:false, isEventSchedule:false, schedulePeople:[], errors:[], warnings:[]};
         let scheduleNumber = 0;
         rawLines.forEach((raw, index) => {
           const line = raw.trim();
@@ -913,7 +959,7 @@ Mar 10: Competition`;
               current = {id:`schedule-${scheduleNumber++}`, ...declaration, named:true, entries:[], errors:[], warnings:[...(declaration.warnings || [])]};
             } catch (error) {
               globalErrors.push(`Line ${index + 1}: ${error.message}.`);
-              current = {id:`schedule-${scheduleNumber++}`, title:line.replace(/^!\s*/, '') || 'Untitled schedule', named:true, entries:[], start:null, end:null, explicitRange:false, yearAnchorRange:null, errors:[], warnings:[]};
+              current = {id:`schedule-${scheduleNumber++}`, title:line.replace(/^!%?\s*/, '') || 'Untitled schedule', named:true, entries:[], start:null, end:null, explicitRange:false, yearAnchorRange:null, isEventSchedule:line.startsWith('!%'), schedulePeople:[], errors:[], warnings:[]};
             }
             return;
           }
@@ -923,9 +969,9 @@ Mar 10: Competition`;
         const hasNamed = sections.some(section => section.named);
 
         sections.forEach(section => {
-          const parseStart = section.start || inferenceStart;
-          const parseEnd = section.end || inferenceEnd;
-          const parsed = parseTaskEntries(section.entries, parseStart, parseEnd, section.id, inferenceStart.getFullYear(), section.yearAnchorRange);
+          const parseStart = section.start || section.yearAnchorRange?.start || inferenceStart;
+          const parseEnd = section.end || section.yearAnchorRange?.end || inferenceEnd;
+          const parsed = parseTaskEntries(section.entries, parseStart, parseEnd, section.id, inferenceStart.getFullYear(), section.yearAnchorRange, section.isEventSchedule);
           section.tasks = parsed.tasks;
           section.errors.push(...parsed.errors);
           section.warnings.push(...parsed.warnings);
@@ -956,13 +1002,13 @@ Mar 10: Competition`;
         const warnings = [...globalWarnings, ...sections.flatMap(section => section.warnings)];
         selected.forEach(section => {
           const offset = tasks.length;
-          section.tasks.forEach(task => tasks.push({...task, scheduleTitle:section.title, parentIndex:task.parentIndex === null ? null : task.parentIndex + offset}));
+          section.tasks.forEach(task => tasks.push({...task, scheduleTitle:section.title, schedulePeople:[...(section.schedulePeople || [])], parentIndex:task.parentIndex === null ? null : task.parentIndex + offset}));
           errors.push(...section.errors);
         });
         const overallStart = new Date(Math.min(...selected.map(section => section.start.getTime())));
         const overallEnd = new Date(Math.max(...selected.map(section => section.end.getTime())));
         if (!tasks.length && !errors.length) errors.push('Add at least one timeline item.');
-        const availableSchedules = sections.map(section => ({id:section.id, title:section.title, start:section.start, end:section.end}));
+        const availableSchedules = sections.map(section => ({id:section.id, title:section.title, start:section.start, end:section.end, isEventSchedule:section.isEventSchedule, people:[...(section.schedulePeople || [])]}));
         return {tasks, errors, warnings, overallStart, overallEnd, availableSchedules, hasNamed, timezone, today:inferenceStart};
       }
 
@@ -984,8 +1030,47 @@ Mar 10: Competition`;
         return {days, months};
       }
 
+      function monthContainsDatedItem(monthStart, items) {
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+        return items.some(item => item.start && item.end && item.start <= monthEnd && item.end >= monthStart);
+      }
+
+      function hideablePastMonth(monthStart, items, today) {
+        if (showEmptyPastMonths) return false;
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+        return monthEnd < today && !monthContainsDatedItem(monthStart, items);
+      }
+
+      function makePlanningCalendar(start, end, items, today) {
+        const full = makeCalendar(start, end);
+        const hiddenKeys = new Set();
+        full.months.forEach(month => {
+          const monthStart = new Date(month.date.getFullYear(), month.date.getMonth(), 1);
+          if (hideablePastMonth(monthStart, items, today)) hiddenKeys.add(`${monthStart.getFullYear()}-${monthStart.getMonth()}`);
+        });
+        const days = full.days.filter(day => !hiddenKeys.has(`${day.getFullYear()}-${day.getMonth()}`));
+        const months = [];
+        days.forEach((day, index) => {
+          const key = `${day.getFullYear()}-${day.getMonth()}`;
+          const previous = months[months.length - 1];
+          if (!previous || previous.key !== key) months.push({key, date:new Date(day), start:index, count:1});
+          else previous.count++;
+        });
+        return {days, months, hiddenMonths:hiddenKeys.size};
+      }
+
+      function visibleItemSpan(item, days) {
+        let first = -1, count = 0;
+        days.forEach((day, index) => {
+          if (day < item.start || day > item.end) return;
+          if (first === -1) first = index;
+          count++;
+        });
+        return {first, count};
+      }
+
       function timelineTaskTitle(task) {
-        const label = `${task.hasChildren ? '▾ ' : ''}${esc(task.name)}`;
+        const label = `${task.hasChildren ? '▾ ' : ''}${esc(planningName(task))}`;
         return task.link ? `<a class="task-name-link" href="${esc(task.link)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(task.name)}">${label}</a>` : label;
       }
 
@@ -995,33 +1080,36 @@ Mar 10: Competition`;
         if (parsed.errors.length) return false;
 
         const {tasks, overallStart, overallEnd} = parsed;
-        const {days, months} = makeCalendar(overallStart, overallEnd);
-        const span = daysBetween(overallStart, overallEnd) + 1;
+        const today = new Date(parsed.today);
+        const scheduledTasks = tasks.filter(task => task.start && task.end && !isEventComplete(task, today));
+        const hiddenEvents = tasks.filter(task => task.start && task.end && isEventComplete(task, today)).length;
+        const {days, months, hiddenMonths} = makePlanningCalendar(overallStart, overallEnd, scheduledTasks, today);
+        const span = days.length;
         const dayWidth = 30;
         const timelineWidth = span * dayWidth;
         const yearSame = overallStart.getFullYear() === overallEnd.getFullYear();
-        const scheduledTasks = tasks.filter(task => task.start && task.end);
-        els.summary.textContent = `${scheduledTasks.length} scheduled item${scheduledTasks.length === 1 ? '' : 's'} · ${pretty(overallStart, !yearSame)} – ${pretty(overallEnd, true)} · ${span} days`;
+        els.summary.textContent = `${scheduledTasks.length} scheduled item${scheduledTasks.length === 1 ? '' : 's'}${hiddenEvents ? ` · ${hiddenEvents} completed event${hiddenEvents === 1 ? '' : 's'} hidden` : ''} · ${pretty(overallStart, !yearSame)} – ${pretty(overallEnd, true)} · ${span} displayed day${span === 1 ? '' : 's'}${hiddenMonths ? ` · ${hiddenMonths} empty past month${hiddenMonths === 1 ? '' : 's'} hidden` : ''}`;
         els.chart.style.setProperty('--timeline-width', `${timelineWidth}px`);
         const monthHtml = months.map(month => `<div class="month-block" style="left:${month.start * dayWidth}px;width:${month.count * dayWidth}px">${esc(month.date.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div>`).join('');
         const dayHtml = days.map((day, i) => `<div class="day-cell${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}" style="left:${i * dayWidth}px"><strong>${day.getDate()}</strong>${esc(day.toLocaleDateString('en-US',{weekday:'narrow'}))}</div>`).join('');
-        const today = new Date(parsed.today);
-        const todayHtml = today >= overallStart && today <= overallEnd ? `<div class="today" style="left:${(daysBetween(overallStart,today) + .5) * dayWidth}px"></div>` : '';
-        const mondayIndex = (overallStart.getDay() + 6) % 7;
+        const todayIndex = days.findIndex(day => day.getTime() === today.getTime());
+        const todayHtml = todayIndex >= 0 ? `<div class="today" style="left:${(todayIndex + .5) * dayWidth}px"></div>` : '';
+        const mondayIndex = days.length ? (days[0].getDay() + 6) % 7 : 0;
         const rows = scheduledTasks.map(task => {
-          const clippedStart = task.start < overallStart ? overallStart : task.start;
-          const clippedEnd = task.end > overallEnd ? overallEnd : task.end;
-          const left = Math.max(0, daysBetween(overallStart, clippedStart) * dayWidth + 3);
-          const duration = daysBetween(clippedStart, clippedEnd) + 1;
-          const width = Math.max(6, duration * dayWidth - 6);
+          const visible = visibleItemSpan(task, days);
+          if (visible.first < 0) return '';
+          const left = visible.first * dayWidth + 3;
+          const width = Math.max(6, visible.count * dayWidth - 6);
           const single = daysBetween(task.start, task.end) === 0;
-          const tooltip = `${task.name}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
+          const displayName = planningName(task);
+          const tooltip = `${displayName}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
+          const eventClasses = eventClassNames(task, today);
           return `<div class="gantt-row">
-            <div class="task-label${task.depth ? ' is-child' : ''}${task.hasChildren ? ' is-parent' : ''}" style="--depth:${task.depth}"><div class="task-name" title="${esc(task.name)}">${timelineTaskTitle(task)}</div></div>
-            <div class="track" style="--week-offset:${-mondayIndex * dayWidth}px">${todayHtml}<div class="bar${task.hasChildren ? ' summary-bar' : single ? ' milestone' : ''}" title="${esc(tooltip)}" style="left:${left}px;width:${width}px;background:${esc(task.color)};--bar-color:${esc(task.color)}"></div></div>
+            <div class="task-label${task.depth ? ' is-child' : ''}${task.hasChildren ? ' is-parent' : ''}${eventClasses}" style="--depth:${task.depth}"><div class="task-name" title="${esc(displayName)}">${timelineTaskTitle(task)}</div></div>
+            <div class="track" style="--week-offset:${-mondayIndex * dayWidth}px">${todayHtml}<div class="bar${task.hasChildren ? ' summary-bar' : single ? ' milestone' : ''}${eventClasses}" title="${esc(tooltip)}" style="left:${left}px;width:${width}px;background:${esc(task.color)};--bar-color:${esc(task.color)}"></div></div>
           </div>`;
         }).join('');
-        els.chart.innerHTML = `<div class="timeline-head"><div class="corner">Tasks</div><div class="calendar-head">${monthHtml}${dayHtml}${todayHtml}</div></div>${rows || '<div class="empty">No items to display.</div>'}`;
+        els.chart.innerHTML = `<div class="timeline-head"><div class="corner">Items</div><div class="calendar-head">${monthHtml}${dayHtml}${todayHtml}</div></div>${rows || '<div class="empty">No items to display.</div>'}`;
         return true;
       }
 
@@ -1031,11 +1119,15 @@ Mar 10: Competition`;
         if (parsed.errors.length) return false;
 
         const {tasks, overallStart, overallEnd} = parsed;
+        const visibleTimelineTasks = tasks.filter(task => !isEventComplete(task, parsed.today));
         const monthStarts = [];
+        let hiddenEmptyPastMonths = 0;
         let monthCursor = new Date(overallStart.getFullYear(), overallStart.getMonth(), 1);
         const finalMonth = new Date(overallEnd.getFullYear(), overallEnd.getMonth(), 1);
         while (monthCursor <= finalMonth) {
-          monthStarts.push(new Date(monthCursor));
+          const candidate = new Date(monthCursor);
+          if (hideablePastMonth(candidate, visibleTimelineTasks, parsed.today)) hiddenEmptyPastMonths++;
+          else monthStarts.push(candidate);
           monthCursor.setMonth(monthCursor.getMonth() + 1);
         }
 
@@ -1047,7 +1139,15 @@ Mar 10: Competition`;
           }
           return false;
         };
-        const roots = tasks.map((task, index) => ({task, index})).filter(({task}) => task.parentIndex === null);
+        const hasVisibleAncestor = task => {
+          let parent = task.parentIndex;
+          while (parent !== null && parent !== undefined) {
+            if (!isEventComplete(tasks[parent], parsed.today)) return true;
+            parent = tasks[parent]?.parentIndex;
+          }
+          return false;
+        };
+        const roots = tasks.map((task, index) => ({task, index})).filter(({task}) => !isEventComplete(task, parsed.today) && !hasVisibleAncestor(task));
         const pct = (value, count) => value / count * 100;
 
         const monthHtml = monthStarts.map(monthStart => {
@@ -1064,20 +1164,23 @@ Mar 10: Competition`;
             const clippedEnd = root.end > monthEnd ? monthEnd : root.end;
             const left = pct(daysBetween(monthStart, clippedStart), dayCount);
             const width = pct(daysBetween(clippedStart, clippedEnd) + 1, dayCount);
-            const tooltip = `${root.name}: ${pretty(root.start)}${root.start.getTime() === root.end.getTime() ? '' : ` to ${pretty(root.end)}`}`;
+            const rootName = planningName(root);
+            const rootEventClasses = eventClassNames(root, parsed.today);
+            const tooltip = `${rootName}: ${pretty(root.start)}${root.start.getTime() === root.end.getTime() ? '' : ` to ${pretty(root.end)}`}`;
+            const rootHasVisibleDescendants = tasks.some((candidate, candidateIndex) => candidateIndex !== rootIndex && !isEventComplete(candidate, parsed.today) && candidate.start && candidate.end && isUnder(candidate, rootIndex));
 
-            if (!root.hasChildren) {
+            if (!rootHasVisibleDescendants) {
               if (root.start.getTime() === root.end.getTime()) {
-                return `<div class="cal-row"><span class="cal-row-label" title="${esc(root.name)}">${esc(root.name)}</span><span class="cal-milestone" title="${esc(tooltip)}" style="left:calc(${left}% + ${pct(.5,dayCount)}% - 4px)"></span></div>`;
+                return `<div class="cal-row${rootEventClasses}"><span class="cal-row-label${rootEventClasses}" title="${esc(rootName)}">${esc(rootName)}</span><span class="cal-milestone${rootEventClasses}" title="${esc(tooltip)}" style="left:calc(${left}% + ${pct(.5,dayCount)}% - 4px)"></span></div>`;
               }
-              return `<div class="cal-row"><span class="cal-row-label" title="${esc(root.name)}">${esc(root.name)}</span><span class="cal-standalone" title="${esc(tooltip)}" style="left:${left}%;width:${width}%;background:${esc(root.color)}"></span></div>`;
+              return `<div class="cal-row${rootEventClasses}"><span class="cal-row-label${rootEventClasses}" title="${esc(rootName)}">${esc(rootName)}</span><span class="cal-standalone${rootEventClasses}" title="${esc(tooltip)}" style="left:${left}%;width:${width}%;background:${esc(root.color)}"></span></div>`;
             }
 
             const children = tasks
               .map((child, childIndex) => ({child, childIndex}))
               .filter(({child, childIndex}) => {
-                if (childIndex === rootIndex || !child.start || !child.end || !isUnder(child, rootIndex) || child.end < monthStart || child.start > monthEnd) return false;
-                const hasDatedDescendant = tasks.some((descendant, descendantIndex) => descendantIndex !== childIndex && descendant.start && descendant.end && isUnder(descendant, childIndex));
+                if (childIndex === rootIndex || isEventComplete(child, parsed.today) || !child.start || !child.end || !isUnder(child, rootIndex) || child.end < monthStart || child.start > monthEnd) return false;
+                const hasDatedDescendant = tasks.some((descendant, descendantIndex) => descendantIndex !== childIndex && !isEventComplete(descendant, parsed.today) && descendant.start && descendant.end && isUnder(descendant, childIndex));
                 return !hasDatedDescendant;
               })
               .sort((a,b) => a.child.start - b.child.start || a.child.end - b.child.end);
@@ -1095,11 +1198,12 @@ Mar 10: Competition`;
               const childEnd = child.end > monthEnd ? monthEnd : child.end;
               const childLeft = pct(daysBetween(monthStart, childStart), dayCount);
               const childWidth = pct(daysBetween(childStart, childEnd) + 1, dayCount);
-              return `<span class="cal-child" title="${esc(child.name)}: ${pretty(child.start)} to ${pretty(child.end)}" style="left:${childLeft}%;width:${childWidth}%;top:${4 + lane * 8}px;background:${esc(child.color)}"></span>`;
+              const childName = planningName(child);
+              return `<span class="cal-child${eventClassNames(child, parsed.today)}" title="${esc(childName)}: ${pretty(child.start)} to ${pretty(child.end)}" style="left:${childLeft}%;width:${childWidth}%;top:${4 + lane * 8}px;background:${esc(child.color)}"></span>`;
             }).join('');
             const openLeft = root.start < monthStart ? ' open-left' : '';
             const openRight = root.end > monthEnd ? ' open-right' : '';
-            return `<div class="cal-row" style="height:${rowHeight}px"><span class="cal-row-label parent" title="${esc(root.name)}">${esc(root.name)}</span><span class="cal-parent${openLeft}${openRight}" title="${esc(tooltip)}" style="left:${left}%;width:${width}%"></span>${childBars}</div>`;
+            return `<div class="cal-row${rootEventClasses}" style="height:${rowHeight}px"><span class="cal-row-label parent${rootEventClasses}" title="${esc(rootName)}">${esc(rootName)}</span><span class="cal-parent${openLeft}${openRight}${rootEventClasses}" title="${esc(tooltip)}" style="left:${left}%;width:${width}%"></span>${childBars}</div>`;
           }).join('');
 
           const monthWidth = pct(dayCount, 31);
@@ -1109,8 +1213,9 @@ Mar 10: Competition`;
           </section>`;
         }).join('');
 
-        els.timelineSummary.textContent = `${monthStarts.length} month${monthStarts.length === 1 ? '' : 's'} · ${tasks.length} item${tasks.length === 1 ? '' : 's'} · parent outlines contain overlapping subtask lanes`;
-        els.timelineChart.innerHTML = monthHtml;
+        const hiddenEvents = tasks.length - visibleTimelineTasks.length;
+        els.timelineSummary.textContent = `${monthStarts.length} month${monthStarts.length === 1 ? '' : 's'} shown · ${visibleTimelineTasks.length} item${visibleTimelineTasks.length === 1 ? '' : 's'}${hiddenEvents ? ` · ${hiddenEvents} completed event${hiddenEvents === 1 ? '' : 's'} hidden` : ''}${hiddenEmptyPastMonths ? ` · ${hiddenEmptyPastMonths} empty past month${hiddenEmptyPastMonths === 1 ? '' : 's'} hidden` : ''} · parent outlines contain overlapping subtask lanes`;
+        els.timelineChart.innerHTML = monthHtml || '<div class="cal-empty">No months to display.</div>';
         return true;
       }
 
@@ -1196,19 +1301,20 @@ Mar 10: Competition`;
           }).join('');
           const eventBars = segments.map(({task,startColumn,endColumn,lane}) => {
             const single = sameDay(task.start, task.end);
-            const tooltip = `${task.name}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
+            const displayName = planningName(task);
+            const tooltip = `${displayName}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
             const tag = task.link ? 'a' : 'span';
             const link = task.link ? ` href="${esc(task.link)}" target="_blank" rel="noopener noreferrer"` : '';
             const depthMarker = task.depth ? `${'↳ '.repeat(Math.min(task.depth, 3))}` : '';
-            const classes = `calendar-event${task.hasChildren ? ' parent-event' : ''}${task.start < rowStart ? ' continues-before' : ''}${task.end > rowEnd ? ' continues-after' : ''}`;
-            return `<${tag} class="${classes}"${link} title="${esc(tooltip)}" style="--event-column:${startColumn};--event-span:${endColumn - startColumn + 1};--event-top:${34 + lane * 22}px;--event-color:${esc(task.color)};--event-text:${calendarTextColor(task.color)}">${depthMarker}${esc(task.name)}</${tag}>`;
+            const classes = `calendar-event${task.hasChildren ? ' parent-event' : ''}${task.start < rowStart ? ' continues-before' : ''}${task.end > rowEnd ? ' continues-after' : ''}${eventClassNames(task, today)}`;
+            return `<${tag} class="${classes}"${link} title="${esc(tooltip)}" style="--event-column:${startColumn};--event-span:${endColumn - startColumn + 1};--event-top:${34 + lane * 22}px;--event-color:${esc(task.color)};--event-text:${calendarTextColor(task.color)}">${depthMarker}${esc(displayName)}</${tag}>`;
           }).join('');
           return `<section class="calendar-week" style="--calendar-columns:${columns};--calendar-row-height:${rowHeight}px"><div class="calendar-week-days">${dayCells}</div>${eventBars}</section>`;
         }).join('');
 
         const visibleEventCount = events.filter(task => task.start <= logicalEnd && task.end >= logicalStart).length;
         els.monthCalendarTitle.textContent = title;
-        els.monthCalendarSummary.textContent = `${visibleEventCount} dated task${visibleEventCount === 1 ? '' : 's'} in view · no scheduled tasks hidden`;
+        els.monthCalendarSummary.textContent = `${visibleEventCount} dated item${visibleEventCount === 1 ? '' : 's'} in view · no scheduled items hidden`;
         els.monthCalendarWeekdays.style.setProperty('--calendar-columns', columns);
         els.monthCalendarWeekdays.innerHTML = weekdayCells;
         els.monthCalendarGrid.innerHTML = rows;
@@ -1265,9 +1371,14 @@ Mar 10: Competition`;
         </div>`;
       }
 
+      function effectiveTaskPeople(task) {
+        return task.people.length ? task.people : (task.schedulePeople || []);
+      }
+
       function taskTableRow(task, {flat = false, depthOverride = null, parentStyle = null, referenceDate = new Date()} = {}) {
         const title = taskTitleMarkup(task);
-        const assignees = task.people.length ? esc(task.people.join(', ')) : '<span class="empty-value">—</span>';
+        const people = effectiveTaskPeople(task);
+        const assignees = people.length ? esc(people.join(', ')) : '<span class="empty-value">—</span>';
         const status = task.status ? esc(task.status) : '<span class="empty-value">—</span>';
         const note = task.note ? esc(task.note) : '<span class="empty-value">—</span>';
         const startDate = task.start ? esc(taskListDate(task.start, referenceDate)) : '<span class="empty-value">—</span>';
@@ -1302,10 +1413,10 @@ Mar 10: Competition`;
             cursorIndex = cursor.parentIndex;
             cursor = cursorIndex === null || cursorIndex === undefined ? null : parsed.tasks[cursorIndex];
           }
-          return ['Unassigned'];
+          return task.schedulePeople?.length ? task.schedulePeople : ['Unassigned'];
         };
         const matches = parsed.tasks.map((task, index) => ({task, index})).filter(({task}) => {
-          if (task.kind === 'summary' || isDoneStatus(task.status)) return false;
+          if (task.isEvent || task.kind === 'summary' || isDoneStatus(task.status)) return false;
           const activeByDate = task.start && task.end && task.start <= today && task.end >= today;
           const actionableOverdue = task.end && task.end < today;
           const actionableByStatus = explicitlyActive(task);
@@ -1343,10 +1454,20 @@ Mar 10: Competition`;
         els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
         if (parsed.errors.length) return false;
 
-        const rows = parsed.tasks.map(task => taskTableRow(task,{referenceDate:parsed.today})).join('');
-        const dated = parsed.tasks.filter(task => task.end).length;
-        const undated = parsed.tasks.length - dated;
-        els.tasksSummary.textContent = `${parsed.tasks.length} task${parsed.tasks.length === 1 ? '' : 's'} · ${dated} dated · ${undated} undated`;
+        const tasks = parsed.tasks.map((task, index) => ({task,index})).filter(({task}) => !task.isEvent);
+        const rows = tasks.map(({task,index}) => {
+          let depth = 0;
+          let parentIndex = task.parentIndex;
+          while (parentIndex !== null && parentIndex !== undefined) {
+            if (!parsed.tasks[parentIndex]?.isEvent) depth++;
+            parentIndex = parsed.tasks[parentIndex]?.parentIndex;
+          }
+          const hasTaskChildren = parsed.tasks.some(candidate => !candidate.isEvent && candidate.parentIndex === index);
+          return taskTableRow(task,{referenceDate:parsed.today,depthOverride:depth,parentStyle:hasTaskChildren});
+        }).join('');
+        const dated = tasks.filter(({task}) => task.end).length;
+        const undated = tasks.length - dated;
+        els.tasksSummary.textContent = `${tasks.length} task${tasks.length === 1 ? '' : 's'} · ${dated} dated · ${undated} undated`;
         els.tasksTable.setAttribute('role', 'table');
         els.tasksTable.setAttribute('aria-label', 'Project tasks');
         els.tasksTable.innerHTML = taskTableHeader() + rows;
@@ -1367,35 +1488,36 @@ Mar 10: Competition`;
           return false;
         };
         const scheduled = parsed.tasks.filter((task, index) => {
-          if (!task.start || !task.end) return false;
-          return !parsed.tasks.some((candidate, candidateIndex) => candidateIndex !== index && candidate.start && candidate.end && isUnder(candidate, index));
+          if (task.isEvent || !task.start || !task.end) return false;
+          return !parsed.tasks.some((candidate, candidateIndex) => !candidate.isEvent && candidateIndex !== index && candidate.start && candidate.end && isUnder(candidate, index));
         });
         const groups = new Map();
         scheduled.forEach(task => {
-          const names = task.people.length ? task.people : ['Unassigned'];
+          const inheritedPeople = effectiveTaskPeople(task);
+          const names = inheritedPeople.length ? inheritedPeople : ['Unassigned'];
           names.forEach(name => {
             if (!groups.has(name)) groups.set(name, []);
             groups.get(name).push(task);
           });
         });
         const orderedGroups = [...groups.entries()].sort((a,b) => a[0] === 'Unassigned' ? 1 : b[0] === 'Unassigned' ? -1 : a[0].localeCompare(b[0]));
-        const {days, months} = makeCalendar(parsed.overallStart, parsed.overallEnd);
-        const span = daysBetween(parsed.overallStart, parsed.overallEnd) + 1;
+        const today = new Date(parsed.today);
+        const {days, months, hiddenMonths} = makePlanningCalendar(parsed.overallStart, parsed.overallEnd, scheduled, today);
+        const span = days.length;
         const dayWidth = 30, timelineWidth = span * dayWidth;
         els.groupsChart.style.setProperty('--timeline-width', `${timelineWidth}px`);
         const monthHtml = months.map(month => `<div class="month-block" style="left:${month.start * dayWidth}px;width:${month.count * dayWidth}px">${esc(month.date.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div>`).join('');
         const dayHtml = days.map((day, i) => `<div class="day-cell${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}" style="left:${i * dayWidth}px"><strong>${day.getDate()}</strong>${esc(day.toLocaleDateString('en-US',{weekday:'narrow'}))}</div>`).join('');
-        const today = new Date(parsed.today);
-        const todayHtml = today >= parsed.overallStart && today <= parsed.overallEnd ? `<div class="today" style="left:${(daysBetween(parsed.overallStart,today) + .5) * dayWidth}px"></div>` : '';
-        const mondayIndex = (parsed.overallStart.getDay() + 6) % 7;
+        const todayIndex = days.findIndex(day => day.getTime() === today.getTime());
+        const todayHtml = todayIndex >= 0 ? `<div class="today" style="left:${(todayIndex + .5) * dayWidth}px"></div>` : '';
+        const mondayIndex = days.length ? (days[0].getDay() + 6) % 7 : 0;
 
         const body = orderedGroups.map(([groupName, groupTasks]) => {
           const taskRows = groupTasks.sort((a,b) => a.start - b.start || a.end - b.end).map(task => {
-            const clippedStart = task.start < parsed.overallStart ? parsed.overallStart : task.start;
-            const clippedEnd = task.end > parsed.overallEnd ? parsed.overallEnd : task.end;
-            const left = Math.max(0, daysBetween(parsed.overallStart, clippedStart) * dayWidth + 3);
-            const duration = daysBetween(clippedStart, clippedEnd) + 1;
-            const width = Math.max(4, duration * dayWidth - 6);
+            const visible = visibleItemSpan(task, days);
+            if (visible.first < 0) return '';
+            const left = visible.first * dayWidth + 3;
+            const width = Math.max(4, visible.count * dayWidth - 6);
             const single = task.start.getTime() === task.end.getTime();
             const tooltip = `${task.name}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
             let mark;
@@ -1410,7 +1532,7 @@ Mar 10: Competition`;
           }).join('');
           return `<section><div class="group-heading"><div class="group-heading-label"><span>${esc(groupName)}</span><small>${groupTasks.length} task${groupTasks.length === 1 ? '' : 's'}</small></div><div class="group-heading-track"></div></div>${taskRows}</section>`;
         }).join('');
-        els.groupsSummary.textContent = `${orderedGroups.length} group${orderedGroups.length === 1 ? '' : 's'} · ${scheduled.length} scheduled task${scheduled.length === 1 ? '' : 's'} · tasks with multiple groups appear in each`;
+        els.groupsSummary.textContent = `${orderedGroups.length} group${orderedGroups.length === 1 ? '' : 's'} · ${scheduled.length} scheduled task${scheduled.length === 1 ? '' : 's'}${hiddenMonths ? ` · ${hiddenMonths} empty past month${hiddenMonths === 1 ? '' : 's'} hidden` : ''} · tasks with multiple groups appear in each`;
         els.groupsChart.innerHTML = orderedGroups.length ? `<div class="timeline-head"><div class="corner">Groups &amp; tasks</div><div class="calendar-head">${monthHtml}${dayHtml}${todayHtml}</div></div>${body}` : '<div class="today-empty"><strong>No scheduled group work.</strong>Add a group in parentheses to organize assigned work.</div>';
         return true;
       }
@@ -1427,7 +1549,8 @@ Mar 10: Competition`;
         els.schedulePickerLabel.textContent = selected.length === 1 ? selected[0].title : `${selected.length} schedules`;
         els.scheduleMenu.innerHTML = parsed.availableSchedules.map(schedule => {
           const checked = selectedScheduleIds?.has(schedule.id) ? ' checked' : '';
-          return `<label class="schedule-option"><input type="checkbox" value="${esc(schedule.id)}"${checked}><span><strong>${esc(schedule.title)}</strong><small>${esc(pretty(schedule.start))} – ${esc(pretty(schedule.end))}</small></span></label>`;
+          const resourceText = schedule.people.length ? `${esc(schedule.people.join(', '))} · ` : '';
+          return `<label class="schedule-option"><input type="checkbox" value="${esc(schedule.id)}"${checked}><span><strong>${esc(schedule.title)}</strong><small>${schedule.isEventSchedule ? 'Events · ' : ''}${resourceText}${esc(pretty(schedule.start))} – ${esc(pretty(schedule.end))}</small></span></label>`;
         }).join('');
       }
 
@@ -1467,6 +1590,7 @@ Mar 10: Competition`;
           view.tab.setAttribute('aria-selected', String(active));
           view.panel.classList.toggle('active', active);
         });
+        els.pastMonthControl.classList.toggle('show', ['gantt','timeline','groups'].includes(name));
         if (name === 'gantt') document.querySelector('.chart-scroll').scrollLeft = 0;
       }
 
@@ -1510,6 +1634,10 @@ Mar 10: Competition`;
         const parsed = parseAll();
         renderSchedulePicker(parsed);
         renderActiveView(parsed);
+      });
+      els.showEmptyPastMonths.addEventListener('change', () => {
+        showEmptyPastMonths = els.showEmptyPastMonths.checked;
+        renderActiveView(parseAll());
       });
       document.querySelector('.tabs').addEventListener('keydown', event => {
         if (!['ArrowLeft','ArrowRight'].includes(event.key)) return;
