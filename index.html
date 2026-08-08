@@ -133,7 +133,7 @@
     .error-box.show { display: block; }
     .warning-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #fff7d6; border: 1px solid #e7cc72; color: #6f5200; padding: 12px 15px; font-size: 13px; line-height: 1.5; }
     .warning-box.show { display: block; }
-    .editor-body .warning-box { margin: 0 0 14px; }
+    .editor-body .error-box, .editor-body .warning-box { margin: 0 0 14px; }
 
     .display-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 14px; box-shadow: 0 12px 35px rgba(23, 52, 73, .08); overflow: hidden; }
     .display-head { padding: 17px 20px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
@@ -394,6 +394,7 @@
           <div class="status" id="save-status">Saved on this device</div>
         </div>
         <div class="editor-body">
+          <div class="error-box" id="errors" role="alert"></div>
           <div class="warning-box" id="warnings" role="status"></div>
           <div class="plan-controls" aria-label="Saved editor entries">
             <label for="plan-select">Saved entry<select id="plan-select"></select></label>
@@ -421,7 +422,6 @@
             </div>
           </div>
         </div>
-        <div class="error-box" id="errors" role="alert"></div>
       </div>
     </section>
 
