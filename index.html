@@ -1,0 +1,1175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%230b5ea8'/%3E%3Cpath%20d='M14%2017H50M14%2032H50M14%2047H50'%20stroke='%23dbeaf6'%20stroke-width='3'/%3E%3Crect%20x='20'%20y='26'%20width='25'%20height='12'%20fill='%23f2c40e'/%3E%3Ccircle%20cx='18'%20cy='47'%20r='5'%20fill='%23e3342f'/%3E%3C/svg%3E">
+  <title>Dayplot — Gantt chart generator</title>
+  <style>
+    :root {
+      --ink: #18211b;
+      --muted: #667169;
+      --paper: #fbfaf5;
+      --surface: #ffffff;
+      --line: #dfe3dc;
+      --line-soft: #eceee9;
+      --accent: #176b4d;
+      --accent-soft: #e6f0eb;
+      --danger: #a33b32;
+      --shadow: 0 20px 60px rgba(26, 39, 30, .09);
+      --radius: 18px;
+      --label-width: 292px;
+      --row-height: 32px;
+      --day-width: 30px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--paper); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% -10%, rgba(230, 240, 235, .95), transparent 32rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    .app { width: min(1500px, calc(100% - 24px)); margin: 0 auto; padding: 12px 0 54px; }
+
+    .topbar { display: flex; align-items: stretch; justify-content: flex-start; min-height: 48px; margin-bottom: 18px; background: #fff; border: 1px solid #d6dde2; border-radius: 12px 12px 0 0; overflow: visible; position: relative; z-index: 20; }
+    .brand { display: flex; align-items: center; gap: 0; padding: 0 20px 0 16px; }
+    .mark { display: none; }
+    .mark::before, .mark::after { content: ""; position: absolute; left: 10px; height: 5px; border-radius: 9px; background: #cfe8d9; }
+    .mark::before { top: 11px; width: 21px; }
+    .mark::after { top: 24px; width: 14px; background: #f2ca6b; }
+    .brand h1 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 17px; line-height: 1; letter-spacing: -.02em; margin: 0; color: #0b5ea8; font-weight: 800; }
+    .brand p { display: none; }
+
+    .tabs { display: inline-flex; padding: 0; background: #fff; border-left: 1px solid #d6dde2; }
+    .tab { position: relative; border: 0; border-right: 1px solid #d6dde2; background: #fff; padding: 0 25px; cursor: pointer; color: #2f3832; font-weight: 600; font-size: 13px; }
+    .tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
+    .tab[aria-selected="true"] { color: #0b5ea8; }
+    .tab[aria-selected="true"]::after { background: #0b5ea8; }
+    .tab:hover { background: #f7f9fa; }
+    .schedule-picker { display: none; position: relative; margin-left: auto; min-width: 175px; border-left: 1px solid #d6dde2; }
+    .schedule-picker.show { display: block; }
+    .schedule-toggle { height: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 15px; cursor: pointer; color: #30414b; font-size: 12px; font-weight: 750; list-style: none; user-select: none; }
+    .schedule-toggle::-webkit-details-marker { display: none; }
+    .schedule-toggle::after { content: "▾"; color: #6e7c84; font-size: 10px; }
+    .schedule-picker[open] .schedule-toggle { background: #f5f8fa; }
+    .schedule-menu { position: absolute; top: calc(100% + 7px); right: 0; width: 270px; padding: 7px; background: #fff; border: 1px solid #cad5dc; border-radius: 9px; box-shadow: 0 14px 35px rgba(23,52,73,.16); }
+    .schedule-option { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; padding: 9px 8px; border-radius: 6px; cursor: pointer; }
+    .schedule-option:hover { background: #f1f6f9; }
+    .schedule-option input { margin: 2px 0 0; accent-color: #0b5ea8; }
+    .schedule-option strong { display: block; color: #263840; font-size: 12px; line-height: 1.25; }
+    .schedule-option small { display: block; margin-top: 2px; color: #78858c; font-size: 10px; }
+    .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(23,107,77,.22); outline-offset: 2px; }
+
+    .panel { display: none; }
+    .panel.active { display: block; animation: enter .18s ease-out; }
+    @keyframes enter { from { opacity: .4; transform: translateY(3px); } }
+
+    .editor-card { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); overflow: hidden; }
+    .editor-head { padding: 18px 32px 16px; border-bottom: 1px solid var(--line-soft); display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+    .eyebrow { margin: 0 0 8px; color: var(--accent); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+    h2 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 4vw, 43px); line-height: 1.05; letter-spacing: -.035em; margin: 0; font-weight: 600; }
+    .lede { margin: 4px 0 0; color: var(--muted); max-width: 620px; line-height: 1.55; }
+    .status { font-size: 12px; color: var(--muted); white-space: nowrap; margin-top: 3px; }
+    .status::before { content: ""; display: inline-block; width: 7px; height: 7px; background: #43a56f; border-radius: 50%; margin-right: 7px; }
+    .editor-body { padding: 28px 32px 32px; }
+    label { display: block; font-weight: 750; font-size: 13px; margin-bottom: 8px; }
+    input[type="date"], textarea { width: 100%; color: var(--ink); background: #fdfdfb; border: 1px solid #ccd2ca; border-radius: 11px; }
+    input[type="date"] { height: 46px; padding: 0 13px; }
+    textarea { display: block; min-height: 320px; padding: 17px 18px; resize: vertical; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 1.35; tab-size: 2; }
+    input:hover, textarea:hover { border-color: #aeb8af; }
+    input:focus, textarea:focus { border-color: var(--accent); background: white; }
+    .syntax-editor { position: relative; min-height: 320px; overflow: hidden; background: #fdfdfb; border: 1px solid #ccd2ca; border-radius: 11px; }
+    .syntax-editor:hover { border-color: #aeb8af; }
+    .syntax-editor:focus-within { border-color: var(--accent); background: white; }
+    .syntax-editor textarea, .syntax-highlight { margin: 0; padding: 17px 18px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 1.35; tab-size: 2; white-space: pre-wrap; overflow-wrap: break-word; }
+    .syntax-editor textarea { position: relative; z-index: 2; min-height: 320px; border: 0; border-radius: 0; background: transparent; color: transparent; caret-color: var(--ink); -webkit-text-fill-color: transparent; }
+    .syntax-editor textarea:hover, .syntax-editor textarea:focus { border: 0; background: transparent; outline-offset: -3px; }
+    .syntax-editor textarea::selection { background: rgba(62, 128, 184, .22); }
+    .syntax-highlight { position: absolute; z-index: 1; inset: 0; pointer-events: none; overflow: hidden; color: var(--ink); }
+    .tok-comment { color: #89928c; font-style: italic; }
+    .tok-marker { color: #6d3fb0; font-weight: 800; }
+    .tok-date { color: #075fae; font-weight: 750; }
+    .tok-duration { color: #087c6b; font-weight: 750; }
+    .tok-group { color: #76520b; }
+    .tok-status { color: #a12d67; font-weight: 750; }
+    .tok-link { color: #007a78; text-decoration: underline; text-underline-offset: 2px; }
+    .tok-color { color: #c53732; font-weight: 800; }
+    .tok-separator { color: #9aa49e; }
+    .field-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .line-count { color: var(--muted); font-size: 12px; }
+    .editor-foot { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-top: 14px; }
+    .syntax { color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .syntax code { color: #39493e; background: #eff2ed; padding: 2px 5px; border-radius: 4px; }
+    .btn { border: 0; border-radius: 11px; padding: 11px 17px; cursor: pointer; font-weight: 750; font-size: 14px; white-space: nowrap; }
+    .btn-primary { background: var(--ink); color: white; box-shadow: 0 7px 16px rgba(24,33,27,.15); }
+    .btn-primary:hover { background: #2b3b30; transform: translateY(-1px); }
+    .btn-secondary { background: var(--surface); border: 1px solid var(--line); }
+    .btn-secondary:hover { background: #f3f5f1; }
+
+    .error-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #fff1ed; border: 1px solid #efc9c1; color: var(--danger); padding: 12px 15px; font-size: 13px; line-height: 1.5; }
+    .error-box.show { display: block; }
+    .warning-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #fff7d6; border: 1px solid #e7cc72; color: #6f5200; padding: 12px 15px; font-size: 13px; line-height: 1.5; }
+    .warning-box.show { display: block; }
+
+    .display-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 14px; box-shadow: 0 12px 35px rgba(23, 52, 73, .08); overflow: hidden; }
+    .display-head { padding: 17px 20px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+    .display-title h2 { font-size: clamp(23px, 3vw, 30px); }
+    .display-title .eyebrow { margin-bottom: 4px; }
+    .summary { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .actions { display: none; }
+    .chart-scroll { overflow-x: auto; border-top: 1px solid var(--line); }
+    .chart { min-width: 860px; width: calc(var(--label-width) + var(--timeline-width, 900px)); }
+    .timeline-head, .gantt-row { display: grid; grid-template-columns: var(--label-width) var(--timeline-width, 900px); }
+    .timeline-head { position: sticky; top: 0; z-index: 4; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+    .corner { position: sticky; left: 0; z-index: 6; min-height: 64px; padding: 24px 22px; color: var(--muted); background: #fff; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800; border-right: 1px solid var(--line); }
+    .calendar-head { position: relative; min-height: 64px; overflow: hidden; background: #f8faf7; }
+    .month-block { position: absolute; top: 0; height: 30px; padding: 7px 8px 0; border-left: 1px solid #cbd4cb; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 11px; font-weight: 850; white-space: nowrap; overflow: hidden; }
+    .day-cell { position: absolute; top: 30px; height: 34px; width: var(--day-width); text-align: center; border-left: 1px solid var(--line-soft); padding-top: 3px; color: var(--muted); font-size: 9px; line-height: 13px; }
+    .day-cell strong { display: block; color: #39453d; font-size: 10px; }
+    .day-cell.weekend { background: #e6e9e5; }
+    .gantt-row { min-height: var(--row-height); border-bottom: 1px solid #dbe4e9; }
+    .gantt-row:last-child { border-bottom: 0; }
+    .task-label { padding: 3px 10px 3px calc(14px + var(--depth, 0) * 17px); border-right: 1px solid #cbd7df; min-width: 0; display: flex; flex-direction: column; justify-content: center; position: sticky; left: 0; z-index: 3; background: #fff; }
+    .task-label.is-child::before { content: ""; position: absolute; left: calc(13px + (var(--depth, 0) - 1) * 17px); top: 0; width: 8px; height: 50%; border-left: 1px solid #aebfc9; border-bottom: 1px solid #aebfc9; }
+    .task-name { font-weight: 700; font-size: 11px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .task-name-link { color: #075fae; font-weight: 850; text-decoration: underline; text-decoration-color: rgba(7,95,174,.65); text-underline-offset: 2px; }
+    .task-name-link::after { content: " ↗"; font-size: 9px; }
+    .task-name-link:hover { color: #003f7a; text-decoration-thickness: 2px; }
+    .task-label.is-parent .task-name { font-weight: 850; }
+    .people { display: none; }
+    .person { font-size: 10px; color: var(--muted); background: #f0f2ee; border-radius: 999px; padding: 3px 7px; }
+    .track { position: relative; min-height: var(--row-height); overflow: hidden; background-color: #fff; background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(var(--day-width) - 1px), rgba(184,204,217,.6) calc(var(--day-width) - 1px), rgba(184,204,217,.6) var(--day-width)), repeating-linear-gradient(90deg, transparent 0, transparent calc(var(--day-width) * 5), rgba(219,225,229,.72) calc(var(--day-width) * 5), rgba(219,225,229,.72) calc(var(--day-width) * 7)), repeating-linear-gradient(0deg, transparent 0, transparent 5px, rgba(189,205,215,.16) 5px, rgba(189,205,215,.16) 6px); background-position: 0 0, var(--week-offset, 0px) 0, 0 0; }
+    .bar { position: absolute; top: 9px; height: 14px; min-width: 6px; border-radius: 0; display: block; padding: 0; box-shadow: none; overflow: visible; }
+    .bar-label { display: none; }
+    .bar.summary-bar { top: 13px; height: 6px; border-radius: 0; padding: 0; box-shadow: none; }
+    .bar.summary-bar::before, .bar.summary-bar::after { content: ""; position: absolute; top: 0; width: 0; height: 0; border-top: 6px solid var(--bar-color); }
+    .bar.summary-bar::before { left: 0; border-right: 8px solid transparent; }
+    .bar.summary-bar::after { right: 0; border-left: 8px solid transparent; }
+    .bar.summary-bar .bar-label { display: none; }
+    .bar.milestone { width: 10px !important; min-width: 10px; height: 10px; top: 11px; transform: rotate(45deg); border-radius: 0; padding: 0; }
+    .bar.milestone .bar-label { display: none; }
+    .today { position: absolute; z-index: 2; top: 0; bottom: 0; width: 2px; background: #dc5d46; pointer-events: none; }
+    .today::before { content: "Today"; position: absolute; top: 3px; left: 5px; color: #b84634; font-size: 9px; font-weight: 800; }
+    .track .today::before { display: none; }
+    .empty { padding: 70px 30px; text-align: center; color: var(--muted); }
+    .screen-reader { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    .calendar-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
+    .calendar-summary { padding: 10px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
+    .calendar-month { border-bottom: 1px solid #bdcbd4; }
+    .calendar-month:last-child { border-bottom: 0; }
+    .cal-month-head { display: grid; grid-template-columns: 168px 1fr; height: 48px; border-bottom: 1px solid #cfd9df; background: #eee; }
+    .cal-month-name { display: flex; align-items: flex-start; padding: 12px 10px; border-right: 1px solid #cfd9df; font-size: 12px; font-weight: 850; color: #193247; white-space: nowrap; }
+    .cal-days { display: grid; width: var(--month-width); min-width: 0; }
+    .cal-day { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; border-right: 1px solid #dce4e8; font-size: 9px; color: #63717a; line-height: 14px; }
+    .cal-day:last-child { border-right: 0; }
+    .cal-day strong { color: #27363e; font-size: 10px; }
+    .cal-day.weekend { background: #e9edef; }
+    .cal-body-shell { margin-left: 168px; }
+    .cal-body { position: relative; width: var(--month-width); padding: 6px 0; background-color: #fff; }
+    .cal-body::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(90deg, rgba(186,203,214,.55) 1px, transparent 1px), linear-gradient(0deg, rgba(195,208,216,.2) 1px, transparent 1px); background-size: calc(100% / var(--days)) 100%, 6px 6px; }
+    .cal-weekend { position: absolute; top: 0; bottom: 0; background: rgba(217,224,229,.58); pointer-events: none; }
+    .cal-row { position: relative; min-height: 20px; margin: 3px 0; }
+    .cal-row-label { position: absolute; right: 100%; top: 0; bottom: 0; width: 168px; z-index: 4; display: flex; align-items: center; padding: 2px 10px; border-right: 1px solid #cfd9df; background: #fff; color: #3b4b55; font-size: 10px; font-weight: 650; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-row-label.parent { color: #193247; font-weight: 850; }
+    .cal-parent { position: absolute; top: 0; height: 100%; border: 1px solid #234f7a; background: rgba(107, 185, 255, 0.25); }
+    .cal-parent.open-left { border-left: 0; }
+    .cal-parent.open-right { border-right: 0; }
+    .cal-parent.open-left::before, .cal-parent.open-right::after { content: ""; position: absolute; top: 50%; width: 7px; height: 7px; border-top: 1px solid #234f7a; border-right: 1px solid #234f7a; background: #fff; }
+    .cal-parent.open-left::before { left: -3px; transform: translateY(-50%) rotate(-135deg); }
+    .cal-parent.open-right::after { right: -3px; transform: translateY(-50%) rotate(45deg); }
+    .cal-child { position: absolute; height: 8px; min-width: 2px; z-index: 2; }
+    .cal-standalone { position: absolute; top: 6px; height: 8px; min-width: 2px; z-index: 2; }
+    .cal-milestone { position: absolute; top: 6px; width: 8px; height: 8px; background: #083f6f; transform: rotate(45deg); z-index: 3; }
+    .cal-empty { padding: 22px; color: var(--muted); font-size: 12px; text-align: center; }
+
+    .tasks-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
+    .tasks-summary { padding: 11px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
+    .tasks-scroll { overflow-x: auto; }
+    .tasks-table { min-width: 1160px; }
+    .tasks-head, .tasks-row { display: grid; grid-template-columns: minmax(280px,1.8fr) minmax(130px,.8fr) minmax(130px,.75fr) minmax(190px,1.15fr) 118px 118px 125px; }
+    .tasks-head { min-height: 43px; background: #f7f9fa; border-bottom: 1px solid #cdd7df; color: #30414b; font-size: 11px; font-weight: 850; }
+    .tasks-head > div, .tasks-row > div { display: flex; align-items: center; min-width: 0; padding: 8px 12px; border-right: 1px solid #d8e0e5; }
+    .tasks-head > div:last-child, .tasks-row > div:last-child { border-right: 0; }
+    .head-mark { width: 7px; height: 7px; margin-right: 9px; background: #0b74d1; transform: rotate(45deg); flex: 0 0 auto; }
+    .tasks-row { min-height: 43px; border-bottom: 1px solid #d8e0e5; color: #26343c; font-size: 12px; }
+    .tasks-row:last-child { border-bottom: 0; }
+    .tasks-row.parent-row { background: #f8fbfd; font-weight: 800; }
+    .task-cell { gap: 9px; padding-left: calc(12px + var(--task-depth, 0) * 20px) !important; }
+    .task-cell::before { content: ""; width: 8px; height: 8px; border: 2px solid var(--task-color, #0b5ea8); flex: 0 0 auto; }
+    .parent-row .task-cell::before { background: var(--task-color, #083f6f); transform: rotate(45deg); border-width: 0; }
+    .task-link, .task-title { color: #18394f; font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .task-link { color: #075fae; font-weight: 850; text-decoration: underline; text-decoration-thickness: 1.5px; text-decoration-color: rgba(7,95,174,.65); text-underline-offset: 3px; }
+    .task-link::after { content: " ↗"; display: inline; font-size: 10px; font-weight: 900; text-decoration: none; }
+    .task-link:hover { color: #003f7a; text-decoration-thickness: 2px; text-decoration-color: currentColor; }
+    .assignee-cell { color: #52636d; }
+    .status-cell { font-weight: 800; text-transform: capitalize; }
+    .status-done { background: #a7efd9; color: #0d664c; }
+    .status-progress { background: #ffe08a; color: #745600; }
+    .status-blocked { background: #ffd1cc; color: #9a2f28; }
+    .status-review { background: #ffd0a8; color: #8c410c; }
+    .status-other { background: #e9eef2; color: #4a5a64; }
+    .note-cell { color: #596972; }
+    .date-cell { color: #394b55; font-variant-numeric: tabular-nums; }
+    .timing-cell { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .timing-total { color: #49606e; background: #edf3f6; }
+    .timing-left, .timing-until { color: #745600; background: #fff4c7; }
+    .timing-past { color: #9a2f28; background: #ffe2de; }
+    .timing-today { color: #0d664c; background: #d9f6eb; }
+    .empty-value { color: #a2adb4; }
+
+    .today-shell, .groups-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
+    .today-summary, .groups-summary { padding: 11px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
+    .today-scroll, .groups-scroll { overflow-x: auto; }
+    .today-table { min-width: 1160px; }
+    .today-lane { border-bottom: 1px solid #aebfca; }
+    .today-lane:last-child { border-bottom: 0; }
+    .today-lane-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 31px; padding: 5px 12px; background: #edf4f8; border-bottom: 1px solid #bdcbd4; color: #173b56; font-size: 11px; font-weight: 900; }
+    .today-lane-head small { color: #71828c; font-size: 9px; font-weight: 750; }
+    .today-empty { padding: 54px 24px; text-align: center; color: #75838b; }
+    .today-empty strong { display: block; margin-bottom: 5px; color: #344851; font-size: 15px; }
+
+    .groups-chart { min-width: 860px; width: calc(var(--label-width) + var(--timeline-width, 900px)); }
+    .groups-chart .timeline-head, .group-heading, .group-task { display: grid; grid-template-columns: var(--label-width) var(--timeline-width, 900px); }
+    .group-heading { min-height: 31px; border-bottom: 1px solid #aebfca; background: #edf4f8; }
+    .group-heading-label { position: sticky; left: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 12px; border-right: 1px solid #b9c8d1; background: #edf4f8; color: #173b56; font-size: 11px; font-weight: 900; }
+    .group-heading-label small { color: #71828c; font-size: 9px; font-weight: 750; }
+    .group-heading-track { background: #edf4f8; }
+    .group-task { min-height: 28px; border-bottom: 1px solid #dce4e8; }
+    .group-task-label { position: sticky; left: 0; z-index: 4; display: flex; align-items: center; min-width: 0; padding: 4px 11px 4px 23px; border-right: 1px solid #cbd7df; background: #fff; color: #344750; font-size: 10px; font-weight: 700; }
+    .group-task-label span, .group-task-label a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .group-track { position: relative; min-height: 28px; overflow: hidden; background-color: #fff; background-image: repeating-linear-gradient(90deg, transparent 0, transparent calc(var(--day-width) - 1px), rgba(184,204,217,.6) calc(var(--day-width) - 1px), rgba(184,204,217,.6) var(--day-width)), repeating-linear-gradient(90deg, transparent 0, transparent calc(var(--day-width) * 5), rgba(219,225,229,.72) calc(var(--day-width) * 5), rgba(219,225,229,.72) calc(var(--day-width) * 7)); background-position: 0 0, var(--week-offset, 0px) 0; }
+    .group-bar { position: absolute; top: 10px; height: 8px; min-width: 4px; display: block; }
+    a.group-bar { cursor: pointer; outline-offset: 2px; }
+    .group-milestone { position: absolute; top: 9px; width: 10px; height: 10px; background: var(--task-color); transform: rotate(45deg); }
+
+    @media (max-width: 720px) {
+      .app { width: min(100% - 12px, 1500px); padding-top: 6px; }
+      .topbar { align-items: center; }
+      .brand p { display: none; }
+      .brand h1 { font-size: 25px; }
+      .brand { padding: 0 12px; }
+      .tab { padding: 0 12px; }
+      .schedule-picker { min-width: 44px; }
+      .schedule-toggle { padding: 0 11px; }
+      .schedule-toggle span { max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .editor-head, .editor-body, .display-head { padding-left: 20px; padding-right: 20px; }
+      .editor-head { display: block; }
+      .status { margin-top: 15px; }
+      .editor-foot { flex-direction: column; }
+      .editor-foot .btn { width: 100%; }
+      .display-head { align-items: flex-start; flex-direction: column; }
+      :root { --label-width: 230px; }
+      .cal-month-head { grid-template-columns: 122px 1fr; }
+      .cal-body-shell { margin-left: 122px; }
+      .cal-month-name { font-size: 10px; padding-left: 7px; }
+      .cal-row-label { width: 122px; padding-left: 7px; font-size: 9px; }
+    }
+
+    @media print {
+      body { background: white; }
+      .app { width: 100%; padding: 0; }
+      .topbar, #edit-panel, .actions { display: none !important; }
+      #display-panel { display: block !important; }
+      .display-shell { border: 0; box-shadow: none; }
+      .chart-scroll { overflow: visible; }
+      .chart { min-width: 0; }
+      :root { --label-width: 25%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand" aria-label="Dayplot">
+        <span class="mark" aria-hidden="true"></span>
+        <div><h1>Dayplot</h1><p>Simple Gantt maker</p></div>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Chart views">
+        <button class="tab" id="edit-tab" role="tab" aria-selected="true" aria-controls="edit-panel">Edit</button>
+        <button class="tab" id="today-tab" role="tab" aria-selected="false" aria-controls="today-panel">Today</button>
+        <button class="tab" id="display-tab" role="tab" aria-selected="false" aria-controls="display-panel">Timeline</button>
+        <button class="tab" id="calendar-tab" role="tab" aria-selected="false" aria-controls="calendar-panel">Calendar</button>
+        <button class="tab" id="groups-tab" role="tab" aria-selected="false" aria-controls="groups-panel">Groups</button>
+        <button class="tab" id="tasks-tab" role="tab" aria-selected="false" aria-controls="tasks-panel">Tasks</button>
+      </div>
+      <details class="schedule-picker" id="schedule-picker">
+        <summary class="schedule-toggle"><span id="schedule-picker-label">Schedules</span></summary>
+        <div class="schedule-menu" id="schedule-menu" role="group" aria-label="Displayed schedules"></div>
+      </details>
+    </header>
+
+    <section class="panel active" id="edit-panel" role="tabpanel" aria-labelledby="edit-tab">
+      <div class="editor-card">
+        <div class="editor-head">
+          <div>
+            <p class="eyebrow">Build your timeline</p>
+            <p class="lede">One task per line. Dates, hierarchy, and colors turn into a clear schedule instantly.</p>
+          </div>
+          <div class="status" id="save-status">Saved on this device</div>
+        </div>
+        <div class="editor-body">
+          <div class="field-row">
+            <label for="items">Timeline items</label>
+            <span class="line-count" id="line-count">0 items</span>
+          </div>
+          <div class="syntax-editor">
+            <pre class="syntax-highlight" id="syntax-highlight" aria-hidden="true"></pre>
+            <textarea id="items" spellcheck="false" aria-describedby="syntax-help"></textarea>
+          </div>
+          <div class="editor-foot">
+            <div class="syntax" id="syntax-help">
+              <strong>Format:</strong> <code>Aug 10-12 - Task name (Owner, Owner) #176b4d</code><br>
+              Indent subtasks with four spaces or a tab. Use <code>? - Parent task</code> to derive its dates, or <code>Task name - [Done]</code> for an undated step.<br>
+              Start a named schedule with <code>! Offseason - Aug 7 - Jan 5, 2026</code>; omit its dates to derive them automatically. Lines beginning with <code>#</code> are comments.<br>
+              Add <code>[In Progress - almost done]</code> for status and note; a trailing <code>{{https://…}}</code> links the task title. Colors are optional.
+            </div>
+            <button class="btn btn-primary" id="build-button">Build timeline →</button>
+          </div>
+        </div>
+        <div class="error-box" id="errors" role="alert"></div>
+        <div class="warning-box" id="warnings" role="status"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="today-panel" role="tabpanel" aria-labelledby="today-tab">
+      <div class="today-shell">
+        <div class="today-summary" id="today-summary"></div>
+        <div class="today-scroll"><div class="today-table" id="today-table"></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="display-panel" role="tabpanel" aria-labelledby="display-tab">
+      <div class="display-shell">
+        <div class="display-head">
+          <div class="display-title">
+            <p class="eyebrow">Project timeline</p>
+            <h2>Your plan at a glance.</h2>
+            <div class="summary" id="summary"></div>
+          </div>
+        </div>
+        <div class="chart-scroll"><div class="chart" id="chart"></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="calendar-panel" role="tabpanel" aria-labelledby="calendar-tab">
+      <div class="calendar-shell">
+        <div class="calendar-summary" id="calendar-summary"></div>
+        <div id="calendar-chart"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="groups-panel" role="tabpanel" aria-labelledby="groups-tab">
+      <div class="groups-shell">
+        <div class="groups-summary" id="groups-summary"></div>
+        <div class="groups-scroll"><div class="groups-chart" id="groups-chart"></div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="tasks-panel" role="tabpanel" aria-labelledby="tasks-tab">
+      <div class="tasks-shell">
+        <div class="tasks-summary" id="tasks-summary"></div>
+        <div class="tasks-scroll"><div class="tasks-table" id="tasks-table"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const MONTH_LOOKUP = Object.fromEntries(MONTHS.flatMap((m, i) => [[m.toLowerCase(), i], [new Date(2000, i, 1).toLocaleString('en', {month:'long'}).toLowerCase(), i]]));
+      MONTH_LOOKUP.sept = 8;
+      MONTH_LOOKUP.set = 8;
+      const PRIMARY_COLORS = ['#0b5ea8', '#e3342f', '#f2c40e'];
+      const DAY = 86400000;
+      let selectedScheduleIds = null;
+      const DEFAULT_ITEMS = `! Offseason - Aug 7 - Jan 5, 2026
+? - Kettering
+    Aug 8-10 - Shooter Move (CAD) [Blocked - ]
+        Another thing - [Done]
+    Aug 10-20 - Spindexer POC (Akylas) [In Progress - almost done] - {{https://automated-amphibians.org/wiki/aa/learning/ai-workshop}}
+    Sep 13 - Kettering Kickoff
+Sep 3 - Parent Meeting #a00
+Aug 25 - AI Meeting
+
+! Build Season
+  Jan 5 - Kickoff
+  Mar 10 - Competition`;
+
+      const els = {
+        items: document.querySelector('#items'), highlight: document.querySelector('#syntax-highlight'), count: document.querySelector('#line-count'),
+        errors: document.querySelector('#errors'), warnings: document.querySelector('#warnings'), summary: document.querySelector('#summary'),
+        chart: document.querySelector('#chart'), save: document.querySelector('#save-status'),
+        calendarChart: document.querySelector('#calendar-chart'), calendarSummary: document.querySelector('#calendar-summary'),
+        tasksTable: document.querySelector('#tasks-table'), tasksSummary: document.querySelector('#tasks-summary'),
+        todayTable: document.querySelector('#today-table'), todaySummary: document.querySelector('#today-summary'),
+        groupsChart: document.querySelector('#groups-chart'), groupsSummary: document.querySelector('#groups-summary'),
+        schedulePicker: document.querySelector('#schedule-picker'), scheduleMenu: document.querySelector('#schedule-menu'), schedulePickerLabel: document.querySelector('#schedule-picker-label'),
+        editTab: document.querySelector('#edit-tab'), todayTab: document.querySelector('#today-tab'), displayTab: document.querySelector('#display-tab'), calendarTab: document.querySelector('#calendar-tab'), groupsTab: document.querySelector('#groups-tab'), tasksTab: document.querySelector('#tasks-tab'),
+        editPanel: document.querySelector('#edit-panel'), todayPanel: document.querySelector('#today-panel'), displayPanel: document.querySelector('#display-panel'), calendarPanel: document.querySelector('#calendar-panel'), groupsPanel: document.querySelector('#groups-panel'), tasksPanel: document.querySelector('#tasks-panel')
+      };
+
+      function addDays(date, amount) { const d = new Date(date); d.setDate(d.getDate() + amount); return d; }
+      function daysBetween(a, b) { return Math.round((b - a) / DAY); }
+      function esc(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+      function pretty(date, includeYear = true) { return date.toLocaleDateString('en-US', {month:'short', day:'numeric', ...(includeYear ? {year:'numeric'} : {})}); }
+      function isDoneStatus(status = '') { return ['done','complete','completed'].includes(status.toLowerCase()); }
+
+      const SYNTAX_TOKEN = /(\{\{?https?:\/\/[^{}\s]+\}\}?|\[[^\]\n]*\]|\([^()\n]*\)|#[0-9a-fA-F]{3,8}\b|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\d{1,2}(?:,?\s+\d{4})?)?|\b\d+\s+days?\b|[!?](?=\s+-)|\s+-\s+)/gi;
+      function syntaxClass(token) {
+        if (token.startsWith('{')) return 'tok-link';
+        if (token.startsWith('[')) return 'tok-status';
+        if (token.startsWith('(')) return 'tok-group';
+        if (token.startsWith('#')) return 'tok-color';
+        if (/^[!?]$/.test(token)) return 'tok-marker';
+        if (/^\s+-\s+$/.test(token)) return 'tok-separator';
+        if (/^\d+\s+days?$/i.test(token)) return 'tok-duration';
+        return 'tok-date';
+      }
+      function highlightLine(line) {
+        const indent = line.match(/^\s*/)[0];
+        const body = line.slice(indent.length);
+        if (body.startsWith('#')) return `${esc(indent)}<span class="tok-comment">${esc(body)}</span>`;
+        let output = '', cursor = 0;
+        SYNTAX_TOKEN.lastIndex = 0;
+        for (const match of body.matchAll(SYNTAX_TOKEN)) {
+          output += esc(body.slice(cursor, match.index));
+          output += `<span class="${syntaxClass(match[0])}">${esc(match[0])}</span>`;
+          cursor = match.index + match[0].length;
+        }
+        return esc(indent) + output + esc(body.slice(cursor));
+      }
+      function updateHighlight() {
+        const value = els.items.value;
+        els.highlight.innerHTML = value.split(/\r?\n/).map(highlightLine).join('\n') + (value.endsWith('\n') ? '\n' : '');
+      }
+      function syncHighlightScroll() {
+        els.highlight.scrollTop = els.items.scrollTop;
+        els.highlight.scrollLeft = els.items.scrollLeft;
+      }
+
+      function load() {
+        try {
+          const stored = JSON.parse(localStorage.getItem('planline-data') || 'null');
+          els.items.value = stored?.items || DEFAULT_ITEMS;
+        } catch (_) {
+          els.items.value = DEFAULT_ITEMS;
+        }
+        updateCount();
+        updateHighlight();
+      }
+
+      let saveTimer;
+      function save() {
+        clearTimeout(saveTimer);
+        els.save.textContent = 'Saving…';
+        saveTimer = setTimeout(() => {
+          try { localStorage.setItem('planline-data', JSON.stringify({items: els.items.value})); }
+          catch (_) { /* Storage can be unavailable in strict private modes. */ }
+          els.save.textContent = 'Saved on this device';
+        }, 250);
+      }
+      function meaningfulLines() { return els.items.value.split(/\r?\n/).filter(line => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('!')); }
+      function updateCount() { const n = meaningfulLines().length; els.count.textContent = `${n} item${n === 1 ? '' : 's'}`; }
+      function renderEditWarnings(parsed) {
+        const warnings = parsed.warnings || [];
+        els.warnings.classList.toggle('show', warnings.length > 0);
+        els.warnings.innerHTML = warnings.length ? `<strong>Check the task hierarchy:</strong><br>${warnings.map(esc).join('<br>')}` : '';
+      }
+
+      function parseDatePart(text, overallStart, overallEnd) {
+        const match = text.trim().match(/^([A-Za-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?$/);
+        if (!match) throw new Error(`“${text.trim()}” is not a recognized date`);
+        const month = MONTH_LOOKUP[match[1].toLowerCase()];
+        const day = Number(match[2]);
+        if (month === undefined) throw new Error(`Unknown month “${match[1]}”`);
+        const explicitYear = match[3] ? Number(match[3]) : null;
+        const years = explicitYear ? [explicitYear] : Array.from({length: overallEnd.getFullYear() - overallStart.getFullYear() + 1}, (_,i) => overallStart.getFullYear() + i);
+        const candidates = years.map(year => new Date(year, month, day)).filter(d => d.getMonth() === month && d.getDate() === day);
+        if (!candidates.length) throw new Error(`Invalid calendar date “${text.trim()}”`);
+        return candidates.find(d => d >= overallStart && d <= overallEnd) || candidates[0];
+      }
+
+      function splitRange(text) {
+        const sameMonth = text.match(/^([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)\s*-\s*(\d{1,2}(?:,?\s+\d{4})?)$/);
+        if (sameMonth) {
+          const month = sameMonth[1].match(/^[A-Za-z]+/)[0];
+          const firstYear = sameMonth[1].match(/(\d{4})$/)?.[1];
+          const endHasYear = /\d{4}$/.test(sameMonth[2]);
+          return [sameMonth[1], `${month} ${sameMonth[2]}${!endHasYear && firstYear ? ` ${firstYear}` : ''}`];
+        }
+        const across = text.match(/^([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)\s*-\s*([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)$/);
+        return across ? [across[1], across[2]] : [text.trim(), text.trim()];
+      }
+
+      function parseTaskDetail(value) {
+        let detail = value.trim();
+        let link = '';
+        const bracedLink = detail.match(/(?:\s+-\s+|\s+)\{\{?(https?:\/\/[^{}\s]+)\}\}?\s*$/i);
+        const linkMatch = bracedLink || detail.match(/\s+-\s+(https?:\/\/\S+)\s*$/i);
+        if (linkMatch) { link = linkMatch[1]; detail = detail.slice(0, linkMatch.index).trim(); }
+
+        let color = null;
+        const takeColor = () => {
+          const match = detail.match(/\s+(#[0-9a-fA-F]{3,8})\s*$/);
+          if (!match) return;
+          color = match[1];
+          detail = detail.slice(0, match.index).trim();
+        };
+        takeColor();
+
+        let status = '', note = '';
+        const statusMatch = detail.match(/\s*\[([^\]]*)\]\s*$/);
+        if (statusMatch) {
+          const statusText = statusMatch[1];
+          const dash = statusText.indexOf('-');
+          status = (dash === -1 ? statusText : statusText.slice(0, dash)).trim();
+          note = dash === -1 ? '' : statusText.slice(dash + 1).trim();
+          detail = detail.slice(0, statusMatch.index).trim();
+        }
+        takeColor();
+
+        const peopleMatch = detail.match(/\s*\(([^()]*)\)\s*$/);
+        const people = peopleMatch ? peopleMatch[1].split(',').map(p => p.trim()).filter(Boolean) : [];
+        if (peopleMatch) detail = detail.slice(0, peopleMatch.index).trim();
+        takeColor();
+        if (color && !/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?([0-9a-fA-F]{2})?$/.test(color)) throw new Error(`Invalid color “${color}”`);
+        if (!detail) throw new Error('Task name is missing');
+        return {name:detail, people, color, status, note, link};
+      }
+
+      function parseLine(line, lineNumber, overallStart, overallEnd, depth) {
+        const parts = line.match(/^(\?|\d+\s+days?|[A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:[A-Za-z]+\s+)?\d{1,2})(?:,?\s+\d{4})?)?)\s+-\s+(.+)$/i);
+        if (!parts) {
+          const undated = line.match(/^(.+?)\s+-\s+(\[[\s\S]*)$/i);
+          const meta = parseTaskDetail(undated ? `${undated[1]} ${undated[2]}` : line);
+          return {lineNumber, ...meta, depth, kind:'undated', start:null, end:null};
+        }
+        const schedule = parts[1].trim();
+        const meta = parseTaskDetail(parts[2]);
+        if (schedule === '?') return {lineNumber, ...meta, depth, kind:'summary', start:null, end:null};
+        const durationMatch = schedule.match(/^(\d+)\s+days?$/i);
+        if (durationMatch) return {lineNumber, ...meta, depth, kind:'duration', duration:Number(durationMatch[1]), start:null, end:null};
+        const [startText, endText] = splitRange(schedule);
+        const start = parseDatePart(startText, overallStart, overallEnd);
+        let end = parseDatePart(endText, overallStart, overallEnd);
+        if (end < start && !/\d{4}/.test(endText)) end = new Date(end.getFullYear() + 1, end.getMonth(), end.getDate());
+        if (end < start) throw new Error('End date comes before start date');
+        return {lineNumber, ...meta, depth, kind:'dated', start, end};
+      }
+
+      function parseScheduleDate(text) {
+        const match = text.trim().match(/^([A-Za-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?$/);
+        if (!match || MONTH_LOOKUP[match[1].toLowerCase()] === undefined) throw new Error(`Invalid schedule date “${text.trim()}”`);
+        return {month:MONTH_LOOKUP[match[1].toLowerCase()], day:Number(match[2]), year:match[3] ? Number(match[3]) : null};
+      }
+
+      function scheduleDate(parts, year) {
+        const date = new Date(year, parts.month, parts.day);
+        if (date.getMonth() !== parts.month || date.getDate() !== parts.day) throw new Error('Invalid calendar date in schedule declaration');
+        return date;
+      }
+
+      function parseScheduleDeclaration(line, fallbackStart, fallbackEnd) {
+        const body = line.replace(/^!\s*/, '').trim();
+        if (!body) throw new Error('Schedule name is missing');
+        const dateTail = body.match(/^(.*?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)$/);
+        if (!dateTail) return {title:body, start:null, end:null, explicitRange:false};
+        const title = dateTail[1].trim();
+        if (!title) throw new Error('Schedule name is missing');
+        const startParts = parseScheduleDate(dateTail[2]);
+        const endParts = parseScheduleDate(dateTail[3]);
+        const wrapsYear = startParts.month > endParts.month || (startParts.month === endParts.month && startParts.day > endParts.day);
+        let startYear, endYear;
+        if (startParts.year && endParts.year) { startYear = startParts.year; endYear = endParts.year; }
+        else if (startParts.year) { startYear = startParts.year; endYear = startYear + (wrapsYear ? 1 : 0); }
+        else if (endParts.year) { endYear = endParts.year; startYear = endYear - (wrapsYear ? 1 : 0); }
+        else {
+          const inferred = parseDatePart(dateTail[2], fallbackStart, fallbackEnd);
+          startYear = inferred.getFullYear();
+          endYear = startYear + (wrapsYear ? 1 : 0);
+        }
+        const start = scheduleDate(startParts, startYear), end = scheduleDate(endParts, endYear);
+        if (end < start) throw new Error(`Schedule “${title}” ends before it starts`);
+        return {title, start, end, explicitRange:true};
+      }
+
+      function parseTaskEntries(entries, parseStart, parseEnd, scheduleId) {
+        const errors = [];
+        const warnings = [];
+        const tasks = [];
+        const stack = [];
+        const indents = entries.map(entry => entry.raw.match(/^[\t ]*/)[0].replace(/\t/g, '    ').length);
+        const baseIndent = indents.length ? Math.min(...indents) : 0;
+        entries.forEach(({raw, lineNumber}) => {
+          const line = raw.trim();
+          try {
+            const whitespace = Math.max(0, raw.match(/^[\t ]*/)[0].replace(/\t/g, '    ').length - baseIndent);
+            const depth = whitespace ? Math.max(1, Math.floor(whitespace / 4)) : 0;
+            if (depth > stack.length) throw new Error('Indentation jumped more than one level');
+            stack.length = depth;
+            const task = parseLine(line, lineNumber, parseStart, parseEnd, depth);
+            task.scheduleId = scheduleId;
+            task.parentIndex = depth ? stack[depth - 1] : null;
+            tasks.push(task);
+            stack[depth] = tasks.length - 1;
+          } catch (error) { errors.push(`Line ${lineNumber}: ${error.message}.`); }
+        });
+        tasks.forEach((task, i) => task.hasChildren = tasks.some(child => child.parentIndex === i));
+        tasks.forEach((task, i) => { if (!task.color) task.color = task.hasChildren ? '#083f6f' : PRIMARY_COLORS[i % PRIMARY_COLORS.length]; });
+        tasks.forEach((task, i) => {
+          if (task.kind !== 'duration') return;
+          const previous = tasks.slice(0, i).reverse().find(item => item.depth === task.depth && item.end);
+          const parent = task.parentIndex !== null ? tasks[task.parentIndex] : null;
+          task.start = previous ? addDays(previous.end, 1) : parent?.start || overallStart;
+          task.end = addDays(task.start, task.duration - 1);
+        });
+        const belongsTo = (candidate, parentIndex) => {
+          let cursor = candidate.parentIndex;
+          while (cursor !== null && cursor !== undefined) {
+            if (cursor === parentIndex) return true;
+            cursor = tasks[cursor]?.parentIndex;
+          }
+          return false;
+        };
+        for (let i = tasks.length - 1; i >= 0; i--) {
+          const task = tasks[i];
+          if (task.kind !== 'summary') continue;
+          const descendants = tasks.filter((candidate, j) => j > i && candidate.start && candidate.end && belongsTo(candidate, i));
+          if (!descendants.length) continue;
+          task.start = new Date(Math.min(...descendants.map(item => item.start.getTime())));
+          task.end = new Date(Math.max(...descendants.map(item => item.end.getTime())));
+        }
+        tasks.forEach((task, index) => {
+          if (!task.hasChildren || !isDoneStatus(task.status)) return;
+          const unfinished = tasks.filter((candidate, candidateIndex) => candidateIndex !== index && belongsTo(candidate, index) && !isDoneStatus(candidate.status));
+          if (!unfinished.length) return;
+          warnings.push(`Line ${task.lineNumber}: “${task.name}” is Done, but ${unfinished.length} subtask${unfinished.length === 1 ? ' is' : 's are'} not.`);
+        });
+        return {tasks, errors, warnings};
+      }
+
+      function parseAll() {
+        const globalErrors = [];
+        const inferenceStart = new Date();
+        inferenceStart.setHours(0,0,0,0);
+        const inferenceEnd = new Date(inferenceStart.getFullYear() + 1, inferenceStart.getMonth(), inferenceStart.getDate());
+
+        const sections = [];
+        let current = {id:'default', title:'Default schedule', named:false, entries:[], start:null, end:null, explicitRange:false, errors:[], warnings:[]};
+        let scheduleNumber = 0;
+        els.items.value.split(/\r?\n/).forEach((raw, index) => {
+          const line = raw.trim();
+          if (!line || line.startsWith('#')) return;
+          if (line.startsWith('!')) {
+            if (current.entries.length || current.named) sections.push(current);
+            try {
+              const declaration = parseScheduleDeclaration(line, inferenceStart, inferenceEnd);
+              current = {id:`schedule-${scheduleNumber++}`, ...declaration, named:true, entries:[], errors:[], warnings:[]};
+            } catch (error) {
+              globalErrors.push(`Line ${index + 1}: ${error.message}.`);
+              current = {id:`schedule-${scheduleNumber++}`, title:line.replace(/^!\s*/, '') || 'Untitled schedule', named:true, entries:[], start:null, end:null, explicitRange:false, errors:[], warnings:[]};
+            }
+            return;
+          }
+          current.entries.push({raw, lineNumber:index + 1});
+        });
+        if (current.entries.length || current.named || !sections.length) sections.push(current);
+        const hasNamed = sections.some(section => section.named);
+
+        sections.forEach(section => {
+          const parseStart = section.start || inferenceStart;
+          const parseEnd = section.end || inferenceEnd;
+          const parsed = parseTaskEntries(section.entries, parseStart, parseEnd, section.id);
+          section.tasks = parsed.tasks;
+          section.errors.push(...parsed.errors);
+          section.warnings.push(...parsed.warnings);
+          const dated = section.tasks.filter(task => task.start && task.end);
+          if (!section.explicitRange && dated.length) {
+            section.start = addDays(new Date(Math.min(...dated.map(task => task.start.getTime()))), -1);
+            section.end = addDays(new Date(Math.max(...dated.map(task => task.end.getTime()))), 1);
+          } else if (!section.start || !section.end) {
+            section.start = addDays(inferenceStart, -1);
+            section.end = addDays(inferenceStart, 1);
+          }
+          if (section.explicitRange) {
+            section.tasks.forEach(task => {
+              if (task.start && task.end && (task.end < section.start || task.start > section.end)) section.errors.push(`Line ${task.lineNumber}: “${task.name}” is outside “${section.title}”.`);
+            });
+          }
+        });
+
+        const scheduleIds = sections.map(section => section.id);
+        if (hasNamed) {
+          if (selectedScheduleIds === null) selectedScheduleIds = new Set(scheduleIds);
+          else selectedScheduleIds = new Set([...selectedScheduleIds].filter(id => scheduleIds.includes(id)));
+          if (!selectedScheduleIds.size) selectedScheduleIds = new Set(scheduleIds);
+        } else selectedScheduleIds = null;
+        const selected = hasNamed ? sections.filter(section => selectedScheduleIds.has(section.id)) : sections;
+        const tasks = [];
+        const errors = [...globalErrors];
+        const warnings = sections.flatMap(section => section.warnings);
+        selected.forEach(section => {
+          const offset = tasks.length;
+          section.tasks.forEach(task => tasks.push({...task, scheduleTitle:section.title, parentIndex:task.parentIndex === null ? null : task.parentIndex + offset}));
+          errors.push(...section.errors);
+        });
+        const overallStart = new Date(Math.min(...selected.map(section => section.start.getTime())));
+        const overallEnd = new Date(Math.max(...selected.map(section => section.end.getTime())));
+        if (!tasks.length && !errors.length) errors.push('Add at least one timeline item.');
+        const availableSchedules = sections.map(section => ({id:section.id, title:section.title, start:section.start, end:section.end}));
+        return {tasks, errors, warnings, overallStart, overallEnd, availableSchedules, hasNamed};
+      }
+
+      function makeCalendar(start, end) {
+        const days = [], months = [];
+        let cursor = new Date(start), monthStart = 0, currentKey = '';
+        while (cursor <= end) {
+          const key = `${cursor.getFullYear()}-${cursor.getMonth()}`;
+          if (key !== currentKey) {
+            if (months.length) months[months.length - 1].count = days.length - monthStart;
+            monthStart = days.length;
+            months.push({date:new Date(cursor), start:monthStart, count:0});
+            currentKey = key;
+          }
+          days.push(new Date(cursor));
+          cursor = addDays(cursor, 1);
+        }
+        if (months.length) months[months.length - 1].count = days.length - monthStart;
+        return {days, months};
+      }
+
+      function timelineTaskTitle(task) {
+        const label = `${task.hasChildren ? '▾ ' : ''}${esc(task.name)}`;
+        return task.link ? `<a class="task-name-link" href="${esc(task.link)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(task.name)}">${label}</a>` : label;
+      }
+
+      function render(parsed = parseAll()) {
+        els.errors.classList.toggle('show', parsed.errors.length > 0);
+        els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
+        if (parsed.errors.length) return false;
+
+        const {tasks, overallStart, overallEnd} = parsed;
+        const {days, months} = makeCalendar(overallStart, overallEnd);
+        const span = daysBetween(overallStart, overallEnd) + 1;
+        const dayWidth = 30;
+        const timelineWidth = span * dayWidth;
+        const yearSame = overallStart.getFullYear() === overallEnd.getFullYear();
+        const scheduledTasks = tasks.filter(task => task.start && task.end);
+        els.summary.textContent = `${scheduledTasks.length} scheduled item${scheduledTasks.length === 1 ? '' : 's'} · ${pretty(overallStart, !yearSame)} – ${pretty(overallEnd, true)} · ${span} days`;
+        els.chart.style.setProperty('--timeline-width', `${timelineWidth}px`);
+        const monthHtml = months.map(month => `<div class="month-block" style="left:${month.start * dayWidth}px;width:${month.count * dayWidth}px">${esc(month.date.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div>`).join('');
+        const dayHtml = days.map((day, i) => `<div class="day-cell${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}" style="left:${i * dayWidth}px"><strong>${day.getDate()}</strong>${esc(day.toLocaleDateString('en-US',{weekday:'narrow'}))}</div>`).join('');
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayHtml = today >= overallStart && today <= overallEnd ? `<div class="today" style="left:${(daysBetween(overallStart,today) + .5) * dayWidth}px"></div>` : '';
+        const mondayIndex = (overallStart.getDay() + 6) % 7;
+        const rows = scheduledTasks.map(task => {
+          const clippedStart = task.start < overallStart ? overallStart : task.start;
+          const clippedEnd = task.end > overallEnd ? overallEnd : task.end;
+          const left = Math.max(0, daysBetween(overallStart, clippedStart) * dayWidth + 3);
+          const duration = daysBetween(clippedStart, clippedEnd) + 1;
+          const width = Math.max(6, duration * dayWidth - 6);
+          const single = daysBetween(task.start, task.end) === 0;
+          const tooltip = `${task.name}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
+          return `<div class="gantt-row">
+            <div class="task-label${task.depth ? ' is-child' : ''}${task.hasChildren ? ' is-parent' : ''}" style="--depth:${task.depth}"><div class="task-name" title="${esc(task.name)}">${timelineTaskTitle(task)}</div></div>
+            <div class="track" style="--week-offset:${-mondayIndex * dayWidth}px">${todayHtml}<div class="bar${task.hasChildren ? ' summary-bar' : single ? ' milestone' : ''}" title="${esc(tooltip)}" style="left:${left}px;width:${width}px;background:${esc(task.color)};--bar-color:${esc(task.color)}"></div></div>
+          </div>`;
+        }).join('');
+        els.chart.innerHTML = `<div class="timeline-head"><div class="corner">Tasks</div><div class="calendar-head">${monthHtml}${dayHtml}${todayHtml}</div></div>${rows || '<div class="empty">No items to display.</div>'}`;
+        return true;
+      }
+
+      function renderCalendar(parsed = parseAll()) {
+        els.errors.classList.toggle('show', parsed.errors.length > 0);
+        els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
+        if (parsed.errors.length) return false;
+
+        const {tasks, overallStart, overallEnd} = parsed;
+        const monthStarts = [];
+        let monthCursor = new Date(overallStart.getFullYear(), overallStart.getMonth(), 1);
+        const finalMonth = new Date(overallEnd.getFullYear(), overallEnd.getMonth(), 1);
+        while (monthCursor <= finalMonth) {
+          monthStarts.push(new Date(monthCursor));
+          monthCursor.setMonth(monthCursor.getMonth() + 1);
+        }
+
+        const isUnder = (task, rootIndex) => {
+          let parent = task.parentIndex;
+          while (parent !== null && parent !== undefined) {
+            if (parent === rootIndex) return true;
+            parent = tasks[parent]?.parentIndex;
+          }
+          return false;
+        };
+        const roots = tasks.map((task, index) => ({task, index})).filter(({task}) => task.parentIndex === null);
+        const pct = (value, count) => value / count * 100;
+
+        const monthHtml = monthStarts.map(monthStart => {
+          const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+          const dayCount = monthEnd.getDate();
+          const days = Array.from({length: dayCount}, (_, i) => new Date(monthStart.getFullYear(), monthStart.getMonth(), i + 1));
+          const dayCells = days.map(day => `<div class="cal-day${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}"><strong>${day.getDate()}</strong>${esc(day.toLocaleDateString('en-US',{weekday:'narrow'}))}</div>`).join('');
+          const weekendShades = days.map((day, i) => day.getDay() === 0 || day.getDay() === 6 ? `<span class="cal-weekend" style="left:${pct(i,dayCount)}%;width:${pct(1,dayCount)}%"></span>` : '').join('');
+
+          const rows = roots.map(({task: root, index: rootIndex}) => {
+            if (!root.start || !root.end) return '';
+            if (root.end < monthStart || root.start > monthEnd) return '';
+            const clippedStart = root.start < monthStart ? monthStart : root.start;
+            const clippedEnd = root.end > monthEnd ? monthEnd : root.end;
+            const left = pct(daysBetween(monthStart, clippedStart), dayCount);
+            const width = pct(daysBetween(clippedStart, clippedEnd) + 1, dayCount);
+            const tooltip = `${root.name}: ${pretty(root.start)}${root.start.getTime() === root.end.getTime() ? '' : ` to ${pretty(root.end)}`}`;
+
+            if (!root.hasChildren) {
+              if (root.start.getTime() === root.end.getTime()) {
+                return `<div class="cal-row"><span class="cal-row-label" title="${esc(root.name)}">${esc(root.name)}</span><span class="cal-milestone" title="${esc(tooltip)}" style="left:calc(${left}% + ${pct(.5,dayCount)}% - 4px)"></span></div>`;
+              }
+              return `<div class="cal-row"><span class="cal-row-label" title="${esc(root.name)}">${esc(root.name)}</span><span class="cal-standalone" title="${esc(tooltip)}" style="left:${left}%;width:${width}%;background:${esc(root.color)}"></span></div>`;
+            }
+
+            const children = tasks
+              .map((child, childIndex) => ({child, childIndex}))
+              .filter(({child, childIndex}) => {
+                if (childIndex === rootIndex || !child.start || !child.end || !isUnder(child, rootIndex) || child.end < monthStart || child.start > monthEnd) return false;
+                const hasDatedDescendant = tasks.some((descendant, descendantIndex) => descendantIndex !== childIndex && descendant.start && descendant.end && isUnder(descendant, childIndex));
+                return !hasDatedDescendant;
+              })
+              .sort((a,b) => a.child.start - b.child.start || a.child.end - b.child.end);
+            const laneEnds = [];
+            children.forEach(item => {
+              let lane = laneEnds.findIndex(end => end < item.child.start);
+              if (lane === -1) lane = laneEnds.length;
+              item.lane = lane;
+              laneEnds[lane] = item.child.end;
+            });
+            const laneCount = Math.max(1, laneEnds.length);
+            const rowHeight = Math.max(20, 8 + laneCount * 8);
+            const childBars = children.map(({child, lane}) => {
+              const childStart = child.start < monthStart ? monthStart : child.start;
+              const childEnd = child.end > monthEnd ? monthEnd : child.end;
+              const childLeft = pct(daysBetween(monthStart, childStart), dayCount);
+              const childWidth = pct(daysBetween(childStart, childEnd) + 1, dayCount);
+              return `<span class="cal-child" title="${esc(child.name)}: ${pretty(child.start)} to ${pretty(child.end)}" style="left:${childLeft}%;width:${childWidth}%;top:${4 + lane * 8}px;background:${esc(child.color)}"></span>`;
+            }).join('');
+            const openLeft = root.start < monthStart ? ' open-left' : '';
+            const openRight = root.end > monthEnd ? ' open-right' : '';
+            return `<div class="cal-row" style="height:${rowHeight}px"><span class="cal-row-label parent" title="${esc(root.name)}">${esc(root.name)}</span><span class="cal-parent${openLeft}${openRight}" title="${esc(tooltip)}" style="left:${left}%;width:${width}%"></span>${childBars}</div>`;
+          }).join('');
+
+          const monthWidth = pct(dayCount, 31);
+          return `<section class="calendar-month" style="--month-width:${monthWidth}%">
+            <div class="cal-month-head"><div class="cal-month-name">${esc(monthStart.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div><div class="cal-days" style="grid-template-columns:repeat(${dayCount},1fr)">${dayCells}</div></div>
+            <div class="cal-body-shell"><div class="cal-body" style="--days:${dayCount}">${weekendShades}${rows || '<div class="cal-empty">No work scheduled this month.</div>'}</div></div>
+          </section>`;
+        }).join('');
+
+        els.calendarSummary.textContent = `${monthStarts.length} month${monthStarts.length === 1 ? '' : 's'} · ${tasks.length} item${tasks.length === 1 ? '' : 's'} · parent outlines contain overlapping subtask lanes`;
+        els.calendarChart.innerHTML = monthHtml;
+        return true;
+      }
+
+      function formatTiming(task, referenceDate = new Date()) {
+        if (!task.start || !task.end) return {text:'—', tone:''};
+        const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+        const singleDay = task.start.getTime() === task.end.getTime();
+        if (singleDay) {
+          if (today < task.start) { const n = daysBetween(today, task.start); return {text:`${n} day${n === 1 ? '' : 's'} until`, tone:'timing-until'}; }
+          if (today > task.end) { const n = daysBetween(task.end, today); return {text:`${n} day${n === 1 ? '' : 's'} past`, tone:'timing-past'}; }
+          return {text:'Today', tone:'timing-today'};
+        }
+        const total = daysBetween(task.start, task.end) + 1;
+        if (today < task.start) return {text:`${total} days total`, tone:'timing-total'};
+        if (today > task.end) { const n = daysBetween(task.end, today); return {text:`${n} day${n === 1 ? '' : 's'} past`, tone:'timing-past'}; }
+        const left = daysBetween(today, task.end);
+        return {text:`${left} day${left === 1 ? '' : 's'} left`, tone:left === 0 ? 'timing-today' : 'timing-left'};
+      }
+
+      function taskListDate(date, referenceDate = new Date()) {
+        return pretty(date, date.getFullYear() !== referenceDate.getFullYear());
+      }
+
+      function taskStatusClass(status) {
+        const value = status.toLowerCase();
+        if (value === 'done' || value === 'complete' || value === 'completed') return 'status-done';
+        if (value.includes('progress') || value === 'active') return 'status-progress';
+        if (value.includes('block') || value === 'stuck') return 'status-blocked';
+        if (value.includes('review')) return 'status-review';
+        return 'status-other';
+      }
+
+      function taskTitleMarkup(task) {
+        return task.link
+          ? `<a class="task-link" href="${esc(task.link)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(task.name)}">${esc(task.name)}</a>`
+          : `<span class="task-title">${esc(task.name)}</span>`;
+      }
+
+      function taskTableHeader() {
+        return `<div class="tasks-head" role="row">
+          <div role="columnheader"><span class="head-mark"></span>Task</div>
+          <div role="columnheader"><span class="head-mark"></span>Assignee</div>
+          <div role="columnheader"><span class="head-mark"></span>Status</div>
+          <div role="columnheader"><span class="head-mark"></span>Note</div>
+          <div role="columnheader"><span class="head-mark"></span>Start date</div>
+          <div role="columnheader"><span class="head-mark"></span>End date</div>
+          <div role="columnheader"><span class="head-mark"></span>Timing</div>
+        </div>`;
+      }
+
+      function taskTableRow(task, {flat = false, depthOverride = null, parentStyle = null, referenceDate = new Date()} = {}) {
+        const title = taskTitleMarkup(task);
+        const assignees = task.people.length ? esc(task.people.join(', ')) : '<span class="empty-value">—</span>';
+        const status = task.status ? esc(task.status) : '<span class="empty-value">—</span>';
+        const note = task.note ? esc(task.note) : '<span class="empty-value">—</span>';
+        const startDate = task.start ? esc(taskListDate(task.start, referenceDate)) : '<span class="empty-value">—</span>';
+        const endDate = task.end ? esc(taskListDate(task.end, referenceDate)) : '<span class="empty-value">—</span>';
+        const timing = formatTiming(task, referenceDate);
+        const statusTone = task.status ? taskStatusClass(task.status) : '';
+        const rowDepth = depthOverride === null ? (flat ? 0 : task.depth) : depthOverride;
+        const showAsParent = parentStyle === null ? (!flat && task.hasChildren) : parentStyle;
+        return `<div class="tasks-row${showAsParent ? ' parent-row' : ''}" role="row">
+          <div class="task-cell" role="cell" style="--task-depth:${rowDepth};--task-color:${esc(task.color)}">${title}</div>
+          <div class="assignee-cell" role="cell">${assignees}</div>
+          <div class="status-cell ${statusTone}" role="cell">${status}</div>
+          <div class="note-cell" role="cell">${note}</div>
+          <div class="date-cell" role="cell">${startDate}</div>
+          <div class="date-cell" role="cell">${endDate}</div>
+          <div class="timing-cell ${timing.tone}" role="cell">${esc(timing.text)}</div>
+        </div>`;
+      }
+
+      function renderToday(parsed = parseAll(), referenceDate = new Date()) {
+        els.errors.classList.toggle('show', parsed.errors.length > 0);
+        els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
+        if (parsed.errors.length) return false;
+        const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
+        const explicitlyActive = task => /progress|active|block|stuck|review/i.test(task.status);
+        const taskResources = (task, index) => {
+          let cursor = task;
+          let cursorIndex = index;
+          while (cursor) {
+            if (cursor.people.length) return cursor.people;
+            cursorIndex = cursor.parentIndex;
+            cursor = cursorIndex === null || cursorIndex === undefined ? null : parsed.tasks[cursorIndex];
+          }
+          return ['Unassigned'];
+        };
+        const matches = parsed.tasks.map((task, index) => ({task, index})).filter(({task}) => {
+          if (task.kind === 'summary' || isDoneStatus(task.status)) return false;
+          const activeByDate = task.start && task.end && task.start <= today && task.end >= today;
+          const actionableOverdue = task.end && task.end < today;
+          const actionableByStatus = explicitlyActive(task);
+          return activeByDate || actionableOverdue || actionableByStatus;
+        }).map(({task, index}) => ({...task, people:taskResources(task, index), sourceIndex:index}));
+
+        const lanes = new Map();
+        matches.forEach(task => task.people.forEach(resource => {
+          if (!lanes.has(resource)) lanes.set(resource, []);
+          lanes.get(resource).push(task);
+        }));
+        const orderedLanes = [...lanes.entries()].sort((a,b) => a[0] === 'Unassigned' ? 1 : b[0] === 'Unassigned' ? -1 : a[0].localeCompare(b[0]));
+        const laneHtml = orderedLanes.map(([resource, tasks]) => {
+          tasks.sort((a,b) => a.sourceIndex - b.sourceIndex);
+          const laneTasks = new Map(tasks.map(task => [task.sourceIndex, task]));
+          const laneDepths = new Map();
+          const laneParents = new Set();
+          tasks.forEach(task => {
+            const parent = laneTasks.get(task.parentIndex);
+            laneDepths.set(task.sourceIndex, parent ? (laneDepths.get(parent.sourceIndex) || 0) + 1 : 0);
+            if (parent) laneParents.add(parent.sourceIndex);
+          });
+          const rows = tasks.map(task => taskTableRow(task, {depthOverride:laneDepths.get(task.sourceIndex), parentStyle:laneParents.has(task.sourceIndex), referenceDate:today})).join('');
+          return `<section class="today-lane" role="rowgroup"><div class="today-lane-head"><span>${esc(resource)}</span><small>${tasks.length} task${tasks.length === 1 ? '' : 's'}</small></div>${rows}</section>`;
+        }).join('');
+        els.todaySummary.textContent = `${today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})} · ${matches.length} actionable task${matches.length === 1 ? '' : 's'} · ${orderedLanes.length} resource lane${orderedLanes.length === 1 ? '' : 's'}`;
+        els.todayTable.setAttribute('role','table');
+        els.todayTable.setAttribute('aria-label','Tasks to work on today');
+        els.todayTable.innerHTML = matches.length ? taskTableHeader() + laneHtml : `<div class="today-empty"><strong>Nothing needs attention today.</strong>No active or overdue unfinished tasks.</div>`;
+        return true;
+      }
+
+      function renderTasks(parsed = parseAll()) {
+        els.errors.classList.toggle('show', parsed.errors.length > 0);
+        els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
+        if (parsed.errors.length) return false;
+
+        const rows = parsed.tasks.map(task => taskTableRow(task)).join('');
+        const dated = parsed.tasks.filter(task => task.end).length;
+        const undated = parsed.tasks.length - dated;
+        els.tasksSummary.textContent = `${parsed.tasks.length} task${parsed.tasks.length === 1 ? '' : 's'} · ${dated} dated · ${undated} undated`;
+        els.tasksTable.setAttribute('role', 'table');
+        els.tasksTable.setAttribute('aria-label', 'Project tasks');
+        els.tasksTable.innerHTML = taskTableHeader() + rows;
+        return true;
+      }
+
+      function renderGroups(parsed = parseAll()) {
+        els.errors.classList.toggle('show', parsed.errors.length > 0);
+        els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
+        if (parsed.errors.length) return false;
+
+        const isUnder = (task, parentIndex) => {
+          let cursor = task.parentIndex;
+          while (cursor !== null && cursor !== undefined) {
+            if (cursor === parentIndex) return true;
+            cursor = parsed.tasks[cursor]?.parentIndex;
+          }
+          return false;
+        };
+        const scheduled = parsed.tasks.filter((task, index) => {
+          if (!task.start || !task.end) return false;
+          return !parsed.tasks.some((candidate, candidateIndex) => candidateIndex !== index && candidate.start && candidate.end && isUnder(candidate, index));
+        });
+        const groups = new Map();
+        scheduled.forEach(task => {
+          const names = task.people.length ? task.people : ['Unassigned'];
+          names.forEach(name => {
+            if (!groups.has(name)) groups.set(name, []);
+            groups.get(name).push(task);
+          });
+        });
+        const orderedGroups = [...groups.entries()].sort((a,b) => a[0] === 'Unassigned' ? 1 : b[0] === 'Unassigned' ? -1 : a[0].localeCompare(b[0]));
+        const {days, months} = makeCalendar(parsed.overallStart, parsed.overallEnd);
+        const span = daysBetween(parsed.overallStart, parsed.overallEnd) + 1;
+        const dayWidth = 30, timelineWidth = span * dayWidth;
+        els.groupsChart.style.setProperty('--timeline-width', `${timelineWidth}px`);
+        const monthHtml = months.map(month => `<div class="month-block" style="left:${month.start * dayWidth}px;width:${month.count * dayWidth}px">${esc(month.date.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div>`).join('');
+        const dayHtml = days.map((day, i) => `<div class="day-cell${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}" style="left:${i * dayWidth}px"><strong>${day.getDate()}</strong>${esc(day.toLocaleDateString('en-US',{weekday:'narrow'}))}</div>`).join('');
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayHtml = today >= parsed.overallStart && today <= parsed.overallEnd ? `<div class="today" style="left:${(daysBetween(parsed.overallStart,today) + .5) * dayWidth}px"></div>` : '';
+        const mondayIndex = (parsed.overallStart.getDay() + 6) % 7;
+
+        const body = orderedGroups.map(([groupName, groupTasks]) => {
+          const taskRows = groupTasks.sort((a,b) => a.start - b.start || a.end - b.end).map(task => {
+            const clippedStart = task.start < parsed.overallStart ? parsed.overallStart : task.start;
+            const clippedEnd = task.end > parsed.overallEnd ? parsed.overallEnd : task.end;
+            const left = Math.max(0, daysBetween(parsed.overallStart, clippedStart) * dayWidth + 3);
+            const duration = daysBetween(clippedStart, clippedEnd) + 1;
+            const width = Math.max(4, duration * dayWidth - 6);
+            const single = task.start.getTime() === task.end.getTime();
+            const tooltip = `${task.name}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
+            let mark;
+            if (single) {
+              const attrs = task.link ? ` href="${esc(task.link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(task.name)}"` : '';
+              mark = `<${task.link ? 'a' : 'span'} class="group-milestone"${attrs} title="${esc(tooltip)}" style="left:${left + 8}px;--task-color:${esc(task.color)}"></${task.link ? 'a' : 'span'}>`;
+            } else {
+              const attrs = task.link ? ` href="${esc(task.link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(task.name)}"` : '';
+              mark = `<${task.link ? 'a' : 'span'} class="group-bar"${attrs} title="${esc(tooltip)}" style="left:${left}px;width:${width}px;background:${esc(task.color)}"></${task.link ? 'a' : 'span'}>`;
+            }
+            return `<div class="group-task"><div class="group-task-label">${taskTitleMarkup(task)}</div><div class="group-track" style="--week-offset:${-mondayIndex * dayWidth}px">${todayHtml}${mark}</div></div>`;
+          }).join('');
+          return `<section><div class="group-heading"><div class="group-heading-label"><span>${esc(groupName)}</span><small>${groupTasks.length} task${groupTasks.length === 1 ? '' : 's'}</small></div><div class="group-heading-track"></div></div>${taskRows}</section>`;
+        }).join('');
+        els.groupsSummary.textContent = `${orderedGroups.length} group${orderedGroups.length === 1 ? '' : 's'} · ${scheduled.length} scheduled task${scheduled.length === 1 ? '' : 's'} · tasks with multiple groups appear in each`;
+        els.groupsChart.innerHTML = orderedGroups.length ? `<div class="timeline-head"><div class="corner">Groups &amp; tasks</div><div class="calendar-head">${monthHtml}${dayHtml}${todayHtml}</div></div>${body}` : '<div class="today-empty"><strong>No scheduled group work.</strong>Add a group in parentheses to organize assigned work.</div>';
+        return true;
+      }
+
+      function renderSchedulePicker(parsed) {
+        if (!parsed.hasNamed || !parsed.availableSchedules.length) {
+          els.schedulePicker.classList.remove('show');
+          els.schedulePicker.removeAttribute('open');
+          els.scheduleMenu.innerHTML = '';
+          return;
+        }
+        els.schedulePicker.classList.add('show');
+        const selected = parsed.availableSchedules.filter(schedule => selectedScheduleIds?.has(schedule.id));
+        els.schedulePickerLabel.textContent = selected.length === 1 ? selected[0].title : `${selected.length} schedules`;
+        els.scheduleMenu.innerHTML = parsed.availableSchedules.map(schedule => {
+          const checked = selectedScheduleIds?.has(schedule.id) ? ' checked' : '';
+          return `<label class="schedule-option"><input type="checkbox" value="${esc(schedule.id)}"${checked}><span><strong>${esc(schedule.title)}</strong><small>${esc(pretty(schedule.start))} – ${esc(pretty(schedule.end))}</small></span></label>`;
+        }).join('');
+      }
+
+      function activeViewName() {
+        if (els.todayTab.getAttribute('aria-selected') === 'true') return 'today';
+        if (els.displayTab.getAttribute('aria-selected') === 'true') return 'timeline';
+        if (els.calendarTab.getAttribute('aria-selected') === 'true') return 'calendar';
+        if (els.groupsTab.getAttribute('aria-selected') === 'true') return 'groups';
+        if (els.tasksTab.getAttribute('aria-selected') === 'true') return 'tasks';
+        return 'edit';
+      }
+
+      function renderActiveView(parsed) {
+        const active = activeViewName();
+        if (active === 'today') return renderToday(parsed);
+        if (active === 'timeline') return render(parsed);
+        if (active === 'calendar') return renderCalendar(parsed);
+        if (active === 'groups') return renderGroups(parsed);
+        if (active === 'tasks') return renderTasks(parsed);
+        return true;
+      }
+
+      function selectTab(name) {
+        const views = [
+          {name:'edit', tab:els.editTab, panel:els.editPanel},
+          {name:'today', tab:els.todayTab, panel:els.todayPanel},
+          {name:'timeline', tab:els.displayTab, panel:els.displayPanel},
+          {name:'calendar', tab:els.calendarTab, panel:els.calendarPanel},
+          {name:'groups', tab:els.groupsTab, panel:els.groupsPanel},
+          {name:'tasks', tab:els.tasksTab, panel:els.tasksPanel}
+        ];
+        views.forEach(view => {
+          const active = view.name === name;
+          view.tab.setAttribute('aria-selected', String(active));
+          view.panel.classList.toggle('active', active);
+        });
+        if (name === 'timeline') document.querySelector('.chart-scroll').scrollLeft = 0;
+      }
+
+      els.items.addEventListener('input', () => {
+        save(); updateCount(); updateHighlight(); els.errors.classList.remove('show');
+        const parsed = parseAll();
+        renderSchedulePicker(parsed);
+        renderEditWarnings(parsed);
+      });
+      els.items.addEventListener('scroll', syncHighlightScroll);
+      els.editTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); renderEditWarnings(parsed); selectTab('edit'); });
+      els.todayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderToday(parsed)) selectTab('today'); else selectTab('edit'); });
+      els.displayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('timeline'); else selectTab('edit'); });
+      els.calendarTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderCalendar(parsed)) selectTab('calendar'); else selectTab('edit'); });
+      els.groupsTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderGroups(parsed)) selectTab('groups'); else selectTab('edit'); });
+      els.tasksTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderTasks(parsed)) selectTab('tasks'); else selectTab('edit'); });
+      document.querySelector('#build-button').addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('timeline'); });
+      els.scheduleMenu.addEventListener('change', event => {
+        if (!(event.target instanceof HTMLInputElement)) return;
+        const checked = [...els.scheduleMenu.querySelectorAll('input:checked')].map(input => input.value);
+        if (!checked.length) { event.target.checked = true; return; }
+        selectedScheduleIds = new Set(checked);
+        const parsed = parseAll();
+        renderSchedulePicker(parsed);
+        renderActiveView(parsed);
+      });
+      document.querySelector('.tabs').addEventListener('keydown', event => {
+        if (!['ArrowLeft','ArrowRight'].includes(event.key)) return;
+        event.preventDefault();
+        const tabs = [els.editTab, els.todayTab, els.displayTab, els.calendarTab, els.groupsTab, els.tasksTab];
+        const current = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true');
+        const next = tabs[(current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+        next.focus(); next.click();
+      });
+
+      load();
+      const initial = parseAll();
+      renderSchedulePicker(initial);
+      renderEditWarnings(initial);
+      renderToday(initial);
+      render(initial);
+      renderCalendar(initial);
+      renderGroups(initial);
+      renderTasks(initial);
+    })();
+  </script>
+</body>
+</html>
