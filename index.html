@@ -4,20 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%230b5ea8'/%3E%3Cpath%20d='M14%2017H50M14%2032H50M14%2047H50'%20stroke='%23dbeaf6'%20stroke-width='3'/%3E%3Crect%20x='20'%20y='26'%20width='25'%20height='12'%20fill='%23f2c40e'/%3E%3Ccircle%20cx='18'%20cy='47'%20r='5'%20fill='%23e3342f'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>CTL — CalTaskLog</title>
   <style>
     :root {
-      --ink: #18211b;
-      --muted: #667169;
-      --paper: #fbfaf5;
+      --ink: #111827;
+      --muted: #64748b;
+      --paper: #f8fafc;
       --surface: #ffffff;
-      --line: #dfe3dc;
-      --line-soft: #eceee9;
-      --accent: #176b4d;
-      --accent-soft: #e6f0eb;
-      --danger: #a33b32;
-      --shadow: 0 20px 60px rgba(26, 39, 30, .09);
+      --line: #dbe3ed;
+      --line-soft: #eaf0f5;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --danger: #ef4444;
+      --shadow: 0 20px 60px rgba(15, 23, 42, .09);
       --radius: 18px;
       --label-width: 292px;
       --row-height: 32px;
@@ -31,7 +31,7 @@
       min-height: 100vh;
       color: var(--ink);
       background:
-        radial-gradient(circle at 8% -10%, rgba(230, 240, 235, .95), transparent 32rem),
+        radial-gradient(circle at 8% -10%, rgba(219, 234, 254, .95), transparent 32rem),
         var(--paper);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
@@ -41,13 +41,13 @@
     .app { width: min(1500px, calc(100% - 24px)); margin: 0 auto; padding: 12px 0 54px; }
 
     .topbar { display: flex; align-items: stretch; justify-content: flex-start; min-height: 48px; margin-bottom: 18px; background: #fff; border: 1px solid #d6dde2; border-radius: 12px 12px 0 0; overflow: visible; position: relative; z-index: 20; }
-    .brand { display: flex; align-items: center; gap: 0; padding: 0 20px 0 16px; }
-    .mark { display: none; }
-    .mark::before, .mark::after { content: ""; position: absolute; left: 10px; height: 5px; border-radius: 9px; background: #cfe8d9; }
-    .mark::before { top: 11px; width: 21px; }
-    .mark::after { top: 24px; width: 14px; background: #f2ca6b; }
-    .brand h1 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 17px; line-height: 1; letter-spacing: -.02em; margin: 0; color: #0b5ea8; font-weight: 800; }
-    .brand-initial { color: #e3342f; font-weight: 950; }
+    .brand { display: flex; align-items: center; gap: 9px; padding: 0 20px 0 16px; }
+    .mark { display: block; width: 29px; height: 29px; flex: 0 0 auto; }
+    .brand h1 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 17px; line-height: 1; letter-spacing: -.02em; margin: 0; color: #111827; font-weight: 400; }
+    .brand-c { color: #ef4444; }
+    .brand-t { color: #111827; }
+    .brand-l { color: #2563eb; }
+    .brand-c strong, .brand-t strong, .brand-l strong { font-weight: 650; }
     .brand p { display: none; }
 
     .tabs { display: inline-flex; padding: 0; background: #fff; border-left: 1px solid #d6dde2; }
@@ -78,11 +78,11 @@
     .panel.active { display: block; animation: enter .18s ease-out; }
     @keyframes enter { from { opacity: .4; transform: translateY(3px); } }
 
-    .editor-card { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); overflow: hidden; }
+    .editor-card { background: var(--surface); border: 1px solid var(--line); border-radius: 0; box-shadow: var(--shadow); overflow: hidden; }
     .editor-head { padding: 18px 32px 16px; border-bottom: 1px solid var(--line-soft); display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
     .eyebrow { margin: 0 0 8px; color: var(--accent); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
     h2 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 4vw, 43px); line-height: 1.05; letter-spacing: -.035em; margin: 0; font-weight: 600; }
-    .lede { margin: 4px 0 0; color: var(--muted); max-width: 620px; line-height: 1.55; }
+    .lede { margin: 4px 0 0; color: var(--muted); line-height: 1.55; }
     .status { font-size: 12px; color: var(--muted); white-space: nowrap; margin-top: 3px; }
     .status::before { content: ""; display: inline-block; width: 7px; height: 7px; background: #43a56f; border-radius: 50%; margin-right: 7px; }
     .editor-body { padding: 28px 32px 32px; }
@@ -92,7 +92,7 @@
     textarea { display: block; min-height: 320px; padding: 17px 18px; resize: vertical; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 1.35; tab-size: 2; }
     input:hover, textarea:hover { border-color: #aeb8af; }
     input:focus, textarea:focus { border-color: var(--accent); background: white; }
-    .syntax-editor { position: relative; min-height: 320px; overflow: hidden; background: #fdfdfb; border: 1px solid #ccd2ca; border-radius: 11px; }
+    .syntax-editor { position: relative; min-height: 320px; overflow: hidden; background: #fdfdfb; border: 1px solid #ccd2ca; border-radius: 0; }
     .syntax-editor:hover { border-color: #aeb8af; }
     .syntax-editor:focus-within { border-color: var(--accent); background: white; }
     .syntax-editor textarea, .syntax-highlight { margin: 0; padding: 17px 18px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 1.35; tab-size: 2; white-space: pre-wrap; overflow-wrap: break-word; }
@@ -111,6 +111,12 @@
     .tok-separator { color: #9aa49e; }
     .field-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
     .line-count { color: var(--muted); font-size: 12px; }
+    .plan-controls { display: grid; grid-template-columns: minmax(160px, 1fr) auto; gap: 10px; align-items: end; margin-bottom: 18px; padding: 12px 14px; background: #f4f7f8; border: 1px solid #d2dce1; }
+    .plan-controls label { margin: 0; color: #50616b; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+    .plan-controls select { display: block; width: 100%; height: 34px; margin-top: 5px; padding: 0 9px; border: 1px solid #bdcbd3; border-radius: 6px; background: #fff; color: #263840; font-size: 12px; }
+    .plan-controls button { height: 34px; padding: 0 12px; border: 1px solid #bdcbd3; border-radius: 6px; background: #fff; color: #234358; cursor: pointer; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .plan-controls button:hover { background: #eaf1f5; }
+    .plan-note { grid-column: 1 / -1; margin: 0; color: #667781; font-size: 11px; }
     .editor-foot { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-top: 14px; }
     .syntax { color: var(--muted); font-size: 12px; line-height: 1.55; }
     .syntax code { color: #39493e; background: #eff2ed; padding: 2px 5px; border-radius: 4px; }
@@ -188,6 +194,8 @@
     .cal-body { position: relative; width: var(--month-width); padding: 6px 0; background-color: #fff; }
     .cal-body::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(90deg, rgba(186,203,214,.55) 1px, transparent 1px), linear-gradient(0deg, rgba(195,208,216,.2) 1px, transparent 1px); background-size: calc(100% / var(--days)) 100%, 6px 6px; }
     .cal-weekend { position: absolute; top: 0; bottom: 0; background: rgba(217,224,229,.58); pointer-events: none; }
+    .timeline-today { position: absolute; z-index: 5; top: 0; bottom: 0; width: 2px; background: #dc5d46; pointer-events: none; }
+    .timeline-today::before { content: "Today"; position: absolute; top: 3px; left: 5px; color: #b84634; font-size: 9px; font-weight: 800; }
     .cal-row { position: relative; min-height: 20px; margin: 3px 0; }
     .cal-row-label { position: absolute; right: 100%; top: 0; bottom: 0; width: 168px; z-index: 4; display: flex; align-items: center; padding: 2px 10px; border-right: 1px solid #cfd9df; background: #fff; color: #3b4b55; font-size: 10px; font-weight: 650; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cal-row-label.parent { color: #193247; font-weight: 850; }
@@ -228,7 +236,7 @@
     .month-day:last-child { border-right: 0; }
     .month-day.outside { background: #f5f6f4; color: #9aa4a9; }
     .month-day.weekend:not(.outside) { background: #fafbfc; }
-    .month-day.today { position: relative; inset: auto; width: auto; }
+    .month-day.today:not(.outside) { position: relative; inset: auto; width: auto; background: #eaf4ff; }
     .month-day.today::before { display: none; }
     .month-date { display: flex; align-items: center; justify-content: flex-end; height: 22px; color: #485861; font-size: 11px; font-weight: 800; }
     .month-day.outside .month-date { color: #a4adb2; }
@@ -317,6 +325,8 @@
       .status { margin-top: 15px; }
       .editor-foot { flex-direction: column; }
       .editor-foot .btn { width: 100%; }
+      .plan-controls { grid-template-columns: 1fr auto; }
+      .plan-controls button { width: 100%; }
       .display-head { align-items: flex-start; flex-direction: column; }
       :root { --label-width: 230px; }
       .cal-month-head { grid-template-columns: 122px 1fr; }
@@ -349,8 +359,8 @@
   <main class="app">
     <header class="topbar">
       <div class="brand" aria-label="CalTaskLog">
-        <span class="mark" aria-hidden="true"></span>
-        <div><h1><span class="brand-initial">C</span>al<span class="brand-initial">T</span>ask<span class="brand-initial">L</span>og</h1><p>Calendar task logger</p></div>
+        <img class="mark" src="favicon.svg" alt="">
+        <div><h1><span class="brand-c"><strong>C</strong>al</span><span class="brand-t"><strong>T</strong>ask</span><span class="brand-l"><strong>L</strong>og</span></h1><p>Calendar task logger</p></div>
       </div>
       <div class="tabs" role="tablist" aria-label="Chart views">
         <button class="tab" id="edit-tab" role="tab" aria-selected="true" aria-controls="edit-panel">Edit</button>
@@ -378,6 +388,11 @@
           <div class="status" id="save-status">Saved on this device</div>
         </div>
         <div class="editor-body">
+          <div class="plan-controls" aria-label="Saved editor entries">
+            <label for="plan-select">Saved entry<select id="plan-select"></select></label>
+            <button id="save-plan" type="button">Save as</button>
+            <p class="plan-note" id="plan-note"></p>
+          </div>
           <div class="field-row">
             <label for="items">Timeline items</label>
             <span class="line-count" id="line-count">0 items</span>
@@ -394,7 +409,6 @@
               Add time with <code>Aug 7 2:30-3:30p:</code>, recurrence with <code>,rrule=FREQ=WEEKLY;BYDAY=MO,WE</code>, and a calendar timezone with <code>@timezone=America/New_York</code>.<br>
               Use <code>! Tasks (Bob) 2026</code> for a year-anchored schedule with a default resource, <code>!% Events 2026</code> for an event schedule, or prefix one event with <code>%</code>. Add <code>[In Progress - note]</code>, <code>{{https://…}}</code>, or a color as needed.
             </div>
-            <button class="btn btn-primary" id="build-button">Build Gantt →</button>
           </div>
         </div>
         <div class="error-box" id="errors" role="alert"></div>
@@ -482,23 +496,61 @@
       let calendarViewDate = null;
       let calendarViewMode = 'month';
       let showEmptyPastMonths = false;
+      let savedPlans = [];
+      let activePlanId = 'default-example';
       const DEFAULT_ITEMS = `@timezone=America/New_York
-! Offseason - Aug 7 - Jan 5
-:Kettering
-    Aug 7-10: Shooter Move (CAD) [Blocked - needs part]
-        :Another thing - [Done]
-        Aug 7 2:30-3:30p: Chassis Design
-    Aug 10-20: Spindexer POC (Akylas) [In Progress - almost done] #0b5ea8 {{https://example.com/spindexer}}
-    Sep 13: Kettering Kickoff
-Sep 3:Parent Meeting #f00
-Aug 25,rrule=FREQ=WEEKLY;BYDAY=MO,WE,FR: AI Meeting
 
-! Build Season - Jan 1 2027 - Apr 30
-Jan 5: Kickoff
-Mar 10: Competition`;
+!% Birthdays & Holidays
+Jan 1: New Year’s Day #2563eb
+Jan 18: Martin Luther King Jr. Day #2563eb
+Feb 14: Valentine’s Day #db2777
+Apr 3: Alex’s Birthday #9333ea
+May 31: Memorial Day #2563eb
+Jul 4: Independence Day #dc2626
+Aug 17: Jordan’s Birthday #9333ea
+Sep 6: Labor Day #2563eb
+Oct 11: Indigenous Peoples’ Day #2563eb
+Nov 11: Veterans Day #2563eb
+Nov 25: Thanksgiving #d97706
+Dec 2: Taylor’s Birthday #9333ea
+Dec 24: Christmas Eve #16a34a
+Dec 25: Christmas Day #16a34a
+Dec 31: New Year’s Eve #2563eb
+
+! Website Launch - Aug 1 2026 - Feb 28 2027
+:Discovery (Product)
+    Aug 3-7: Stakeholder interviews (Product) [Done]
+    :Requirements (Product)
+        Aug 8-12: Draft requirements (Product) [In Progress - gathering final details]
+        Aug 13-14: Review requirements (Product, Engineering) [Planned]
+            Aug 17: Approve project scope (Leadership) [Planned]
+:Design (Design)
+    Aug 18-28: Produce wireframes (Design) [Planned]
+    Aug 31-Sep 11: Create visual design (Design) [Planned] #0b5ea8
+        Sep 14: Design review (Design, Product) [Planned]
+:Build and launch (Engineering)
+    Sep 15-Dec 18: Implement website (Engineering) [Planned] #16a34a
+        Jan 4-22: Quality assurance (Engineering, QA) [Planned]
+            Jan 25: Approve release candidate (Product, QA) [Planned]
+    Feb 8: Production launch (Engineering, Operations) [Planned] #dc2626
+
+! Fall 10K Training - Aug 8 2026 - Oct 17 (Chris)
+Aug 8 8:00-9:00a: Baseline 5K run [In Progress - establish training pace] #16a34a
+Aug 15 8:00-8:45a: Easy 3-mile run #16a34a
+Aug 22 8:00-9:00a: Long 4-mile run #0b5ea8
+Aug 29 7:00-8:00a: Six 400-meter intervals #d97706
+Sep 5 8:00-9:15a: Long 5-mile run #0b5ea8
+Sep 12 7:00-8:00a: Three-mile tempo run #d97706
+Sep 19 8:00-9:30a: Long 6-mile run #0b5ea8
+Sep 26 7:00-8:00a: Four 800-meter intervals #d97706
+Oct 3-16: Taper and recovery period #64748b
+Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
+      const PLAN_STORAGE_KEY = 'caltasklog-saved-plans';
+      const LEGACY_STORAGE_KEY = 'planline-data';
 
       const els = {
         items: document.querySelector('#items'), highlight: document.querySelector('#syntax-highlight'), count: document.querySelector('#line-count'),
+        planSelect: document.querySelector('#plan-select'), savePlan: document.querySelector('#save-plan'), planNote: document.querySelector('#plan-note'),
         errors: document.querySelector('#errors'), warnings: document.querySelector('#warnings'), summary: document.querySelector('#summary'),
         chart: document.querySelector('#chart'), save: document.querySelector('#save-status'),
         timelineChart: document.querySelector('#timeline-chart'), timelineSummary: document.querySelector('#timeline-summary'),
@@ -563,26 +615,99 @@ Mar 10: Competition`;
         els.highlight.scrollLeft = els.items.scrollLeft;
       }
 
-      function load() {
+      function defaultPlan() { return {id:'default-example', name:'Default example', items:DEFAULT_ITEMS, readOnly:true}; }
+      function makePlanId() { return `plan-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; }
+      function activePlan() { return savedPlans.find(plan => plan.id === activePlanId) || savedPlans[0]; }
+      function normalizePlanName(value) { return value.trim().replace(/\s+/g, ' '); }
+      function uniquePlanName(base) {
+        const names = new Set(savedPlans.map(plan => plan.name.toLocaleLowerCase()));
+        if (!names.has(base.toLocaleLowerCase())) return base;
+        let number = 2;
+        while (names.has(`${base} ${number}`.toLocaleLowerCase())) number++;
+        return `${base} ${number}`;
+      }
+      function persistPlans() {
         try {
-          const stored = JSON.parse(localStorage.getItem('planline-data') || 'null');
-          els.items.value = stored?.items || DEFAULT_ITEMS;
-        } catch (_) {
-          els.items.value = DEFAULT_ITEMS;
-        }
+          const writablePlans = savedPlans.filter(plan => !plan.readOnly).map(({id,name,items}) => ({id,name,items}));
+          localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify({activePlanId, plans:writablePlans}));
+          localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({items:els.items.value}));
+        } catch (_) { /* Storage can be unavailable in strict private modes. */ }
+      }
+      function renderPlanControls() {
+        const plan = activePlan();
+        els.planSelect.innerHTML = savedPlans.map(entry => `<option value="${esc(entry.id)}"${entry.id === plan.id ? ' selected' : ''}>${esc(entry.name)}${entry.readOnly ? ' — read only' : ''}</option>`).join('');
+        els.items.readOnly = Boolean(plan.readOnly);
+        els.items.setAttribute('aria-readonly', String(Boolean(plan.readOnly)));
+        els.planNote.textContent = plan.readOnly ? 'This built-in example is protected. Use Save as to make an editable copy.' : 'Changes to this entry save automatically on this device.';
+        els.save.textContent = plan.readOnly ? 'Default example is read only' : 'Saved on this device';
+      }
+      function activatePlan(id) {
+        const plan = savedPlans.find(entry => entry.id === id);
+        if (!plan) return;
+        clearTimeout(saveTimer);
+        activePlanId = plan.id;
+        els.items.value = plan.items;
+        selectedScheduleIds = null;
         updateCount();
         updateHighlight();
+        renderPlanControls();
+        const parsed = parseAll();
+        renderSchedulePicker(parsed);
+        renderEditWarnings(parsed);
+        persistPlans();
+      }
+      function load() {
+        const builtIn = defaultPlan();
+        try {
+          const stored = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || 'null');
+          const customPlans = Array.isArray(stored?.plans) ? stored.plans
+            .filter(plan => typeof plan?.name === 'string' && typeof plan?.items === 'string')
+            .map(plan => ({id:typeof plan.id === 'string' ? plan.id : makePlanId(), name:normalizePlanName(plan.name) || 'Untitled entry', items:plan.items, readOnly:false})) : [];
+          savedPlans = [builtIn, ...customPlans];
+          activePlanId = savedPlans.some(plan => plan.id === stored?.activePlanId) ? stored.activePlanId : builtIn.id;
+          if (!customPlans.length && !stored) {
+            const legacy = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || 'null');
+            if (typeof legacy?.items === 'string' && legacy.items !== DEFAULT_ITEMS) {
+              const migrated = {id:makePlanId(), name:'My plan', items:legacy.items, readOnly:false};
+              savedPlans.push(migrated);
+              activePlanId = migrated.id;
+            }
+          }
+        } catch (_) {
+          savedPlans = [builtIn];
+          activePlanId = builtIn.id;
+        }
+        activatePlan(activePlanId);
       }
 
       let saveTimer;
       function save() {
+        const plan = activePlan();
+        if (!plan || plan.readOnly) return;
         clearTimeout(saveTimer);
         els.save.textContent = 'Saving…';
         saveTimer = setTimeout(() => {
-          try { localStorage.setItem('planline-data', JSON.stringify({items: els.items.value})); }
-          catch (_) { /* Storage can be unavailable in strict private modes. */ }
+          plan.items = els.items.value;
+          persistPlans();
           els.save.textContent = 'Saved on this device';
         }, 250);
+      }
+      function savePlanAs() {
+        const source = activePlan();
+        let requested;
+        try { requested = window.prompt('Save this entry as:', uniquePlanName(`${source.name} copy`)); }
+        catch (_) { return; }
+        if (requested === null) return;
+        const normalized = normalizePlanName(requested);
+        if (!normalized) { els.planNote.textContent = 'The entry was not saved because it needs a name.'; return; }
+        if (normalized.toLocaleLowerCase() === 'default example') { els.planNote.textContent = 'Default example is reserved for the protected built-in entry.'; return; }
+        const name = uniquePlanName(normalized);
+        const target = {id:makePlanId(), name, items:els.items.value, readOnly:false};
+        savedPlans.push(target);
+        activePlanId = target.id;
+        renderPlanControls();
+        persistPlans();
+        els.save.textContent = 'Saved on this device';
       }
       function meaningfulLines() { return els.items.value.split(/\r?\n/).filter(line => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('!') && !/^@timezone\b/i.test(line.trim())); }
       function updateCount() { const n = meaningfulLines().length; els.count.textContent = `${n} item${n === 1 ? '' : 's'}`; }
@@ -801,7 +926,10 @@ Mar 10: Competition`;
         const dateTail = body.match(/^(.*?)\s+(?:-\s+)?([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)$/i);
         if (!dateTail) {
           const yearOnly = body.match(/^(.*?)\s+(\d{4})$/);
-          if (!yearOnly) return {title:body, start:null, end:null, explicitRange:false, yearAnchorRange:null, warnings:[], isEventSchedule, schedulePeople};
+          if (!yearOnly) {
+            const yearAnchorRange = isEventSchedule ? {start:new Date(currentYear,0,1),end:new Date(currentYear,11,31)} : null;
+            return {title:body, start:null, end:null, explicitRange:false, yearAnchorRange, warnings:[], isEventSchedule, schedulePeople};
+          }
           const title = yearOnly[1].trim();
           const year = Number(yearOnly[2]);
           if (!title) throw new Error('Schedule name is missing');
@@ -820,8 +948,9 @@ Mar 10: Competition`;
         const start = scheduleDate(startParts, startYear), end = scheduleDate(endParts, endYear);
         if (end < start) throw new Error(`Schedule “${title}” ends before it starts`);
         const hasYearAnchor = Boolean(startParts.year || endParts.year);
-        const warnings = hasYearAnchor ? [] : [`Line ${lineNumber}: schedule “${title}” has no year anchor; using ${startYear}${endYear === startYear ? '' : `–${endYear}`}.`];
-        return {title, start, end, explicitRange:true, yearAnchorRange:hasYearAnchor ? {start:new Date(start),end:new Date(end)} : null, warnings, isEventSchedule, schedulePeople};
+        const effectiveYearAnchor = hasYearAnchor || isEventSchedule;
+        const warnings = effectiveYearAnchor ? [] : [`Line ${lineNumber}: schedule “${title}” has no year anchor; using ${startYear}${endYear === startYear ? '' : `–${endYear}`}.`];
+        return {title, start, end, explicitRange:true, yearAnchorRange:effectiveYearAnchor ? {start:new Date(start),end:new Date(end)} : null, warnings, isEventSchedule, schedulePeople};
       }
 
       function expandRecurringTask(task, rangeEnd) {
@@ -1119,6 +1248,7 @@ Mar 10: Competition`;
         if (parsed.errors.length) return false;
 
         const {tasks, overallStart, overallEnd} = parsed;
+        const today = new Date(parsed.today);
         const visibleTimelineTasks = tasks.filter(task => !isEventComplete(task, parsed.today));
         const monthStarts = [];
         let hiddenEmptyPastMonths = 0;
@@ -1149,6 +1279,7 @@ Mar 10: Competition`;
         };
         const roots = tasks.map((task, index) => ({task, index})).filter(({task}) => !isEventComplete(task, parsed.today) && !hasVisibleAncestor(task));
         const pct = (value, count) => value / count * 100;
+        const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
         const monthHtml = monthStarts.map(monthStart => {
           const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
@@ -1209,7 +1340,7 @@ Mar 10: Competition`;
           const monthWidth = pct(dayCount, 31);
           return `<section class="timeline-month" style="--month-width:${monthWidth}%">
             <div class="cal-month-head"><div class="cal-month-name">${esc(monthStart.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div><div class="cal-days" style="grid-template-columns:repeat(${dayCount},1fr)">${dayCells}</div></div>
-            <div class="cal-body-shell"><div class="cal-body" style="--days:${dayCount}">${weekendShades}${rows || '<div class="cal-empty">No work scheduled this month.</div>'}</div></div>
+            <div class="cal-body-shell"><div class="cal-body" style="--days:${dayCount}">${weekendShades}${sameDay(today, monthStart) || (today > monthStart && today <= monthEnd) ? `<span class="timeline-today" style="left:calc(${pct(daysBetween(monthStart, today) + .5, dayCount)}% - 1px)"></span>` : ''}${rows || '<div class="cal-empty">No work scheduled this month.</div>'}</div></div>
           </section>`;
         }).join('');
 
@@ -1258,7 +1389,8 @@ Mar 10: Competition`;
           title = logicalStart.toLocaleDateString('en-US', {month:'long', year:'numeric'});
         } else {
           columns = Number(calendarViewMode);
-          periodStart = calendarViewMode === '7' ? addDays(calendarViewDate, -calendarViewDate.getDay()) : new Date(calendarViewDate);
+          calendarViewDate = new Date(today);
+          periodStart = new Date(today);
           periodEnd = addDays(periodStart, columns - 1);
           logicalStart = periodStart;
           logicalEnd = periodEnd;
@@ -1318,8 +1450,8 @@ Mar 10: Competition`;
         els.monthCalendarWeekdays.style.setProperty('--calendar-columns', columns);
         els.monthCalendarWeekdays.innerHTML = weekdayCells;
         els.monthCalendarGrid.innerHTML = rows;
-        els.calendarPrev.disabled = logicalStart <= firstDay;
-        els.calendarNext.disabled = logicalEnd >= lastDay;
+        els.calendarPrev.disabled = calendarViewMode !== 'month' || logicalStart <= firstDay;
+        els.calendarNext.disabled = calendarViewMode !== 'month' || logicalEnd >= lastDay;
         els.calendarViewButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.calendarView === calendarViewMode)));
         return true;
       }
@@ -1528,7 +1660,7 @@ Mar 10: Competition`;
               const attrs = task.link ? ` href="${esc(task.link)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${esc(task.name)}"` : '';
               mark = `<${task.link ? 'a' : 'span'} class="group-bar"${attrs} title="${esc(tooltip)}" style="left:${left}px;width:${width}px;background:${esc(task.color)}"></${task.link ? 'a' : 'span'}>`;
             }
-            return `<div class="group-task"><div class="group-task-label">${taskTitleMarkup(task)}</div><div class="group-track" style="--week-offset:${-mondayIndex * dayWidth}px">${todayHtml}${mark}</div></div>`;
+            return `<div class="group-task"><div class="group-task-label">${taskTitleMarkup(task)}</div><div class="group-track" style="--week-offset:${-mondayIndex * dayWidth}px">${mark}</div></div>`;
           }).join('');
           return `<section><div class="group-heading"><div class="group-heading-label"><span>${esc(groupName)}</span><small>${groupTasks.length} task${groupTasks.length === 1 ? '' : 's'}</small></div><div class="group-heading-track"></div></div>${taskRows}</section>`;
         }).join('');
@@ -1601,6 +1733,8 @@ Mar 10: Competition`;
         renderEditWarnings(parsed);
       });
       els.items.addEventListener('scroll', syncHighlightScroll);
+      els.planSelect.addEventListener('change', () => activatePlan(els.planSelect.value));
+      els.savePlan.addEventListener('click', savePlanAs);
       els.editTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); renderEditWarnings(parsed); selectTab('edit'); });
       els.todayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderToday(parsed)) selectTab('today'); else selectTab('edit'); });
       els.displayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('gantt'); else selectTab('edit'); });
@@ -1608,23 +1742,23 @@ Mar 10: Competition`;
       els.calendarTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderCalendar(parsed)) selectTab('calendar'); else selectTab('edit'); });
       els.groupsTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderGroups(parsed)) selectTab('groups'); else selectTab('edit'); });
       els.tasksTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderTasks(parsed)) selectTab('tasks'); else selectTab('edit'); });
-      document.querySelector('#build-button').addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('gantt'); });
       els.calendarPrev.addEventListener('click', () => {
         if (calendarViewMode === 'month') calendarViewDate.setMonth(calendarViewDate.getMonth() - 1);
-        else calendarViewDate = addDays(calendarViewDate, -Number(calendarViewMode));
+        else calendarViewDate = new Date(parseAll().today);
         renderCalendar(parseAll());
       });
       els.calendarNext.addEventListener('click', () => {
         if (calendarViewMode === 'month') calendarViewDate.setMonth(calendarViewDate.getMonth() + 1);
-        else calendarViewDate = addDays(calendarViewDate, Number(calendarViewMode));
+        else calendarViewDate = new Date(parseAll().today);
         renderCalendar(parseAll());
       });
       els.calendarToday.addEventListener('click', () => { const parsed=parseAll(); calendarViewDate = new Date(parsed.today); renderCalendar(parsed); });
       els.calendarViewButtons.forEach(button => button.addEventListener('click', () => {
         calendarViewMode = button.dataset.calendarView;
         if (calendarViewMode === 'month') calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
-        if (calendarViewMode === '7') calendarViewDate = addDays(calendarViewDate, -calendarViewDate.getDay());
-        renderCalendar(parseAll());
+        const parsed = parseAll();
+        if (calendarViewMode !== 'month') calendarViewDate = new Date(parsed.today);
+        renderCalendar(parsed);
       }));
       els.scheduleMenu.addEventListener('change', event => {
         if (!(event.target instanceof HTMLInputElement)) return;

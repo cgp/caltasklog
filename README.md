@@ -152,7 +152,7 @@ Important date rules:
 - Dates are inclusive. `Aug 10-12` occupies three days.
 - Every task line must contain a colon, including structural and undated tasks.
 
-By default, a yearless standalone date uses the current year—even if the current month is December and the written month is January. Edit shows a non-blocking warning for each date without a year anchor. There are two exceptions:
+By default, a yearless standalone date uses the current year—even if the current month is December and the written month is January. A yearless `!%` event schedule also anchors all of its dates to the current year without an Edit warning. Other unanchored dates show a non-blocking warning. There are two additional exceptions:
 
 1. A range whose end would be before its start rolls the yearless end into the following year, as in `Dec 1-Jan 1`.
 2. A task inherits an explicit year range from its closest dated parent, or from its schedule declaration. Within a cross-year inherited range, the parser selects the year that places the child on or after the inherited start.
@@ -342,7 +342,8 @@ Edit is the source-of-truth text editor.
 - Syntax colors distinguish schedule/timezone markers, dates, times, recurrence rules, durations, resources, statuses, links, color codes, colons, and comments.
 - Typing updates the item count, syntax coloring, schedule list, and warnings.
 - Blank lines, comments, timezone directives, and schedule declarations are excluded from the item count.
-- The text is saved to browser-local storage after a short debounce. The existing storage key intentionally remains `planline-data` so product renames do not discard previously saved plans.
+- The protected **Default example** is always available but read-only. **Save as** opens a browser naming dialog and creates an editable named copy; canceling the dialog makes no change.
+- Editable named entries save to browser-local storage after a short debounce. Existing single-editor content is migrated into `My plan` the first time the named-entry feature loads.
 - Storage is device/browser-local; there is no server synchronization.
 
 ### Today
