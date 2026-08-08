@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%230b5ea8'/%3E%3Cpath%20d='M14%2017H50M14%2032H50M14%2047H50'%20stroke='%23dbeaf6'%20stroke-width='3'/%3E%3Crect%20x='20'%20y='26'%20width='25'%20height='12'%20fill='%23f2c40e'/%3E%3Ccircle%20cx='18'%20cy='47'%20r='5'%20fill='%23e3342f'/%3E%3C/svg%3E">
-  <title>Dayplot — Gantt chart generator</title>
+  <title>CTL — CalTaskLog</title>
   <style>
     :root {
       --ink: #18211b;
@@ -47,6 +47,7 @@
     .mark::before { top: 11px; width: 21px; }
     .mark::after { top: 24px; width: 14px; background: #f2ca6b; }
     .brand h1 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 17px; line-height: 1; letter-spacing: -.02em; margin: 0; color: #0b5ea8; font-weight: 800; }
+    .brand-initial { color: #e3342f; font-weight: 950; }
     .brand p { display: none; }
 
     .tabs { display: inline-flex; padding: 0; background: #fff; border-left: 1px solid #d6dde2; }
@@ -119,6 +120,7 @@
     .error-box.show { display: block; }
     .warning-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #fff7d6; border: 1px solid #e7cc72; color: #6f5200; padding: 12px 15px; font-size: 13px; line-height: 1.5; }
     .warning-box.show { display: block; }
+    .editor-body .warning-box { margin: 0 0 14px; }
 
     .display-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 14px; box-shadow: 0 12px 35px rgba(23, 52, 73, .08); overflow: hidden; }
     .display-head { padding: 17px 20px 14px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
@@ -163,10 +165,10 @@
     .empty { padding: 70px 30px; text-align: center; color: var(--muted); }
     .screen-reader { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-    .calendar-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
-    .calendar-summary { padding: 10px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
-    .calendar-month { border-bottom: 1px solid #bdcbd4; }
-    .calendar-month:last-child { border-bottom: 0; }
+    .timeline-shell, .calendar-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
+    .timeline-summary { padding: 10px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
+    .timeline-month { border-bottom: 1px solid #bdcbd4; }
+    .timeline-month:last-child { border-bottom: 0; }
     .cal-month-head { display: grid; grid-template-columns: 168px 1fr; height: 48px; border-bottom: 1px solid #cfd9df; background: #eee; }
     .cal-month-name { display: flex; align-items: flex-start; padding: 12px 10px; border-right: 1px solid #cfd9df; font-size: 12px; font-weight: 850; color: #193247; white-space: nowrap; }
     .cal-days { display: grid; width: var(--month-width); min-width: 0; }
@@ -191,6 +193,43 @@
     .cal-standalone { position: absolute; top: 6px; height: 8px; min-width: 2px; z-index: 2; }
     .cal-milestone { position: absolute; top: 6px; width: 8px; height: 8px; background: #083f6f; transform: rotate(45deg); z-index: 3; }
     .cal-empty { padding: 22px; color: var(--muted); font-size: 12px; text-align: center; }
+
+    .month-calendar-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; min-height: 70px; padding: 10px 14px; border-bottom: 1px solid #cfd9df; background: #f7f9fa; }
+    .calendar-toolbar-side { display: flex; align-items: center; gap: 8px; }
+    .calendar-toolbar-side:last-child { justify-content: flex-end; }
+    .month-calendar-title { min-width: 0; text-align: center; }
+    .month-calendar-title h2 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 850; letter-spacing: -.02em; }
+    .month-calendar-summary { margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .month-nav { border: 1px solid #c7d2d9; border-radius: 8px; background: #fff; padding: 7px 11px; color: #234358; cursor: pointer; font-size: 12px; font-weight: 800; }
+    .month-nav:hover:not(:disabled) { background: #edf4f8; }
+    .month-nav:disabled { opacity: .38; cursor: default; }
+    .calendar-view-switch { display: inline-flex; overflow: hidden; border: 1px solid #c7d2d9; border-radius: 8px; background: #fff; }
+    .calendar-view-button { border: 0; border-right: 1px solid #d5dee3; background: transparent; padding: 7px 9px; color: #566873; cursor: pointer; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .calendar-view-button:last-child { border-right: 0; }
+    .calendar-view-button:hover { background: #edf4f8; }
+    .calendar-view-button[aria-pressed="true"] { background: #0b5ea8; color: #fff; }
+    .month-calendar-weekdays { display: grid; grid-template-columns: repeat(var(--calendar-columns, 7), minmax(0, 1fr)); }
+    .month-calendar-weekdays { background: #edf2f5; border-bottom: 1px solid #c9d4db; }
+    .month-weekday { padding: 7px 5px; border-right: 1px solid #d5dee3; color: #52636d; text-align: center; font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .05em; }
+    .month-weekday strong { display: block; margin-top: 2px; color: #263840; font-size: 10px; letter-spacing: 0; text-transform: none; }
+    .month-weekday:last-child { border-right: 0; }
+    .calendar-week { position: relative; min-height: var(--calendar-row-height, 112px); border-bottom: 1px solid #d5dee3; }
+    .calendar-week:last-child { border-bottom: 0; }
+    .calendar-week-days { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--calendar-columns, 7), minmax(0, 1fr)); }
+    .month-day { min-width: 0; height: 100%; padding: 6px; border-right: 1px solid #d5dee3; background: #fff; }
+    .month-day:last-child { border-right: 0; }
+    .month-day.outside { background: #f5f6f4; color: #9aa4a9; }
+    .month-day.weekend:not(.outside) { background: #fafbfc; }
+    .month-day.today { position: relative; inset: auto; width: auto; }
+    .month-day.today::before { display: none; }
+    .month-date { display: flex; align-items: center; justify-content: flex-end; height: 22px; color: #485861; font-size: 11px; font-weight: 800; }
+    .month-day.outside .month-date { color: #a4adb2; }
+    .month-day.today .month-date span { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #0b5ea8; color: #fff; }
+    .calendar-event { position: absolute; z-index: 2; top: var(--event-top); left: calc(var(--event-column) * 100% / var(--calendar-columns) + 3px); width: calc(var(--event-span) * 100% / var(--calendar-columns) - 6px); height: 19px; padding: 2px 6px; border-radius: 4px; background: var(--event-color); color: var(--event-text, #fff); box-shadow: 0 1px 2px rgba(20,42,55,.18); font-size: 10px; font-weight: 800; line-height: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+    .calendar-event.parent-event { box-shadow: inset 0 0 0 1px rgba(0,0,0,.28), 0 1px 2px rgba(20,42,55,.14); font-weight: 900; }
+    .calendar-event.continues-before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    .calendar-event.continues-after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    a.calendar-event:hover { filter: brightness(.92); text-decoration: underline; }
 
     .tasks-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
     .tasks-summary { padding: 11px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
@@ -273,6 +312,14 @@
       .cal-body-shell { margin-left: 122px; }
       .cal-month-name { font-size: 10px; padding-left: 7px; }
       .cal-row-label { width: 122px; padding-left: 7px; font-size: 9px; }
+      .month-day { min-height: 82px; padding: 4px; }
+      .calendar-event { padding: 2px 4px; font-size: 8px; }
+      .month-calendar-head { grid-template-areas: "title title" "left right"; grid-template-columns: auto 1fr; gap: 8px; padding: 8px; }
+      .month-calendar-title { grid-area: title; }
+      .calendar-toolbar-side:first-child { grid-area: left; }
+      .calendar-toolbar-side:last-child { grid-area: right; }
+      .calendar-view-button { padding: 6px 5px; font-size: 9px; }
+      .month-nav { padding: 7px 8px; }
     }
 
     @media print {
@@ -290,14 +337,15 @@
 <body>
   <main class="app">
     <header class="topbar">
-      <div class="brand" aria-label="Dayplot">
+      <div class="brand" aria-label="CalTaskLog">
         <span class="mark" aria-hidden="true"></span>
-        <div><h1>Dayplot</h1><p>Simple Gantt maker</p></div>
+        <div><h1><span class="brand-initial">C</span>al<span class="brand-initial">T</span>ask<span class="brand-initial">L</span>og</h1><p>Calendar task logger</p></div>
       </div>
       <div class="tabs" role="tablist" aria-label="Chart views">
         <button class="tab" id="edit-tab" role="tab" aria-selected="true" aria-controls="edit-panel">Edit</button>
         <button class="tab" id="today-tab" role="tab" aria-selected="false" aria-controls="today-panel">Today</button>
-        <button class="tab" id="display-tab" role="tab" aria-selected="false" aria-controls="display-panel">Timeline</button>
+        <button class="tab" id="display-tab" role="tab" aria-selected="false" aria-controls="display-panel">Gantt</button>
+        <button class="tab" id="timeline-tab" role="tab" aria-selected="false" aria-controls="timeline-panel">Timeline</button>
         <button class="tab" id="calendar-tab" role="tab" aria-selected="false" aria-controls="calendar-panel">Calendar</button>
         <button class="tab" id="groups-tab" role="tab" aria-selected="false" aria-controls="groups-panel">Groups</button>
         <button class="tab" id="tasks-tab" role="tab" aria-selected="false" aria-controls="tasks-panel">Tasks</button>
@@ -322,22 +370,22 @@
             <label for="items">Timeline items</label>
             <span class="line-count" id="line-count">0 items</span>
           </div>
+          <div class="warning-box" id="warnings" role="status"></div>
           <div class="syntax-editor">
             <pre class="syntax-highlight" id="syntax-highlight" aria-hidden="true"></pre>
             <textarea id="items" spellcheck="false" aria-describedby="syntax-help"></textarea>
           </div>
           <div class="editor-foot">
             <div class="syntax" id="syntax-help">
-              <strong>Format:</strong> <code>Aug 10-12 - Task name (Owner, Owner) #176b4d</code><br>
-              Indent subtasks with four spaces or a tab. Use <code>? - Parent task</code> to derive its dates, or <code>Task name - [Done]</code> for an undated step.<br>
-              Start a named schedule with <code>! Offseason - Aug 7 - Jan 5, 2026</code>; omit its dates to derive them automatically. Lines beginning with <code>#</code> are comments.<br>
-              Add <code>[In Progress - almost done]</code> for status and note; a trailing <code>{{https://…}}</code> links the task title. Colors are optional.
+              <strong>Format:</strong> <code>Aug 10-12: Task name (Owner) #176b4d</code><br>
+              Every task uses a colon. Leave the date blank for a structural or undated task, or use <code>2 days:</code> / <code>3 weeks:</code> for relative duration.<br>
+              Add time with <code>Aug 7 2:30-3:30p:</code>, recurrence with <code>,rrule=FREQ=WEEKLY;BYDAY=MO,WE</code>, and a calendar timezone with <code>@timezone=America/New_York</code>.<br>
+              Schedules still use <code>! Offseason - Aug 7 - Jan 5</code>. Add <code>[In Progress - note]</code>, <code>{{https://…}}</code>, or a color as needed.
             </div>
-            <button class="btn btn-primary" id="build-button">Build timeline →</button>
+            <button class="btn btn-primary" id="build-button">Build Gantt →</button>
           </div>
         </div>
         <div class="error-box" id="errors" role="alert"></div>
-        <div class="warning-box" id="warnings" role="status"></div>
       </div>
     </section>
 
@@ -352,7 +400,7 @@
       <div class="display-shell">
         <div class="display-head">
           <div class="display-title">
-            <p class="eyebrow">Project timeline</p>
+            <p class="eyebrow">Project Gantt</p>
             <h2>Your plan at a glance.</h2>
             <div class="summary" id="summary"></div>
           </div>
@@ -361,10 +409,35 @@
       </div>
     </section>
 
+    <section class="panel" id="timeline-panel" role="tabpanel" aria-labelledby="timeline-tab">
+      <div class="timeline-shell">
+        <div class="timeline-summary" id="timeline-summary"></div>
+        <div id="timeline-chart"></div>
+      </div>
+    </section>
+
     <section class="panel" id="calendar-panel" role="tabpanel" aria-labelledby="calendar-tab">
       <div class="calendar-shell">
-        <div class="calendar-summary" id="calendar-summary"></div>
-        <div id="calendar-chart"></div>
+        <div class="month-calendar-head">
+          <div class="calendar-toolbar-side">
+            <button class="month-nav" id="calendar-prev" type="button" aria-label="Previous calendar period">Previous</button>
+            <button class="month-nav" id="calendar-today" type="button">Today</button>
+          </div>
+          <div class="month-calendar-title">
+            <h2 id="calendar-month-title"></h2>
+            <div class="month-calendar-summary" id="calendar-summary" aria-live="polite"></div>
+          </div>
+          <div class="calendar-toolbar-side">
+            <div class="calendar-view-switch" role="group" aria-label="Calendar view">
+              <button class="calendar-view-button" type="button" data-calendar-view="month" aria-pressed="true">Month</button>
+              <button class="calendar-view-button" type="button" data-calendar-view="7">7 days</button>
+              <button class="calendar-view-button" type="button" data-calendar-view="4">4 days</button>
+            </div>
+            <button class="month-nav" id="calendar-next" type="button" aria-label="Next calendar period">Next</button>
+          </div>
+        </div>
+        <div class="month-calendar-weekdays" id="calendar-weekdays" aria-hidden="true"></div>
+        <div class="month-calendar-grid" id="calendar-grid"></div>
       </div>
     </section>
 
@@ -394,30 +467,35 @@
       const PRIMARY_COLORS = ['#0b5ea8', '#e3342f', '#f2c40e'];
       const DAY = 86400000;
       let selectedScheduleIds = null;
-      const DEFAULT_ITEMS = `! Offseason - Aug 7 - Jan 5, 2026
-? - Kettering
-    Aug 8-10 - Shooter Move (CAD) [Blocked - ]
-        Another thing - [Done]
-    Aug 10-20 - Spindexer POC (Akylas) [In Progress - almost done] - {{https://automated-amphibians.org/wiki/aa/learning/ai-workshop}}
-    Sep 13 - Kettering Kickoff
-Sep 3 - Parent Meeting #a00
-Aug 25 - AI Meeting
+      let calendarViewDate = null;
+      let calendarViewMode = 'month';
+      const DEFAULT_ITEMS = `@timezone=America/New_York
+! Offseason - Aug 7 - Jan 5
+:Kettering
+    Aug 7-10: Shooter Move (CAD) [Blocked - needs part]
+        :Another thing - [Done]
+        Aug 7 2:30-3:30p: Chassis Design
+    Aug 10-20: Spindexer POC (Akylas) [In Progress - almost done] #0b5ea8 {{https://example.com/spindexer}}
+    Sep 13: Kettering Kickoff
+Sep 3:Parent Meeting #f00
+Aug 25,rrule=FREQ=WEEKLY;BYDAY=MO,WE,FR: AI Meeting
 
-! Build Season
-  Jan 5 - Kickoff
-  Mar 10 - Competition`;
+! Build Season - Jan 1 2027 - Apr 30
+Jan 5: Kickoff
+Mar 10: Competition`;
 
       const els = {
         items: document.querySelector('#items'), highlight: document.querySelector('#syntax-highlight'), count: document.querySelector('#line-count'),
         errors: document.querySelector('#errors'), warnings: document.querySelector('#warnings'), summary: document.querySelector('#summary'),
         chart: document.querySelector('#chart'), save: document.querySelector('#save-status'),
-        calendarChart: document.querySelector('#calendar-chart'), calendarSummary: document.querySelector('#calendar-summary'),
+        timelineChart: document.querySelector('#timeline-chart'), timelineSummary: document.querySelector('#timeline-summary'),
+        monthCalendarGrid: document.querySelector('#calendar-grid'), monthCalendarWeekdays: document.querySelector('#calendar-weekdays'), monthCalendarSummary: document.querySelector('#calendar-summary'), monthCalendarTitle: document.querySelector('#calendar-month-title'), calendarPrev: document.querySelector('#calendar-prev'), calendarToday: document.querySelector('#calendar-today'), calendarNext: document.querySelector('#calendar-next'), calendarViewButtons: [...document.querySelectorAll('[data-calendar-view]')],
         tasksTable: document.querySelector('#tasks-table'), tasksSummary: document.querySelector('#tasks-summary'),
         todayTable: document.querySelector('#today-table'), todaySummary: document.querySelector('#today-summary'),
         groupsChart: document.querySelector('#groups-chart'), groupsSummary: document.querySelector('#groups-summary'),
         schedulePicker: document.querySelector('#schedule-picker'), scheduleMenu: document.querySelector('#schedule-menu'), schedulePickerLabel: document.querySelector('#schedule-picker-label'),
-        editTab: document.querySelector('#edit-tab'), todayTab: document.querySelector('#today-tab'), displayTab: document.querySelector('#display-tab'), calendarTab: document.querySelector('#calendar-tab'), groupsTab: document.querySelector('#groups-tab'), tasksTab: document.querySelector('#tasks-tab'),
-        editPanel: document.querySelector('#edit-panel'), todayPanel: document.querySelector('#today-panel'), displayPanel: document.querySelector('#display-panel'), calendarPanel: document.querySelector('#calendar-panel'), groupsPanel: document.querySelector('#groups-panel'), tasksPanel: document.querySelector('#tasks-panel')
+        editTab: document.querySelector('#edit-tab'), todayTab: document.querySelector('#today-tab'), displayTab: document.querySelector('#display-tab'), timelineTab: document.querySelector('#timeline-tab'), calendarTab: document.querySelector('#calendar-tab'), groupsTab: document.querySelector('#groups-tab'), tasksTab: document.querySelector('#tasks-tab'),
+        editPanel: document.querySelector('#edit-panel'), todayPanel: document.querySelector('#today-panel'), displayPanel: document.querySelector('#display-panel'), timelinePanel: document.querySelector('#timeline-panel'), calendarPanel: document.querySelector('#calendar-panel'), groupsPanel: document.querySelector('#groups-panel'), tasksPanel: document.querySelector('#tasks-panel')
       };
 
       function addDays(date, amount) { const d = new Date(date); d.setDate(d.getDate() + amount); return d; }
@@ -425,16 +503,20 @@ Aug 25 - AI Meeting
       function esc(value) { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
       function pretty(date, includeYear = true) { return date.toLocaleDateString('en-US', {month:'short', day:'numeric', ...(includeYear ? {year:'numeric'} : {})}); }
       function isDoneStatus(status = '') { return ['done','complete','completed'].includes(status.toLowerCase()); }
+      function todayForTimezone(timezone) {
+        const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:timezone,year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date()).filter(part => part.type !== 'literal').map(part => [part.type,Number(part.value)]));
+        return new Date(parts.year, parts.month - 1, parts.day);
+      }
 
-      const SYNTAX_TOKEN = /(\{\{?https?:\/\/[^{}\s]+\}\}?|\[[^\]\n]*\]|\([^()\n]*\)|#[0-9a-fA-F]{3,8}\b|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\d{1,2}(?:,?\s+\d{4})?)?|\b\d+\s+days?\b|[!?](?=\s+-)|\s+-\s+)/gi;
+      const SYNTAX_TOKEN = /(\{\{?https?:\/\/[^{}\s]+\}\}?|\[[^\]\n]*\]|\([^()\n]*\)|#[0-9a-fA-F]{3,8}\b|@timezone\s*=\s*[^\s]+|rrule=[^:\s]+|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)?|\b\d+\s+(?:days?|weeks?)\b|\d{1,2}(?::\d{2})?\s*[ap]?m?\s*-\s*\d{1,2}(?::\d{2})?\s*[ap]?m?|:)/gi;
       function syntaxClass(token) {
         if (token.startsWith('{')) return 'tok-link';
         if (token.startsWith('[')) return 'tok-status';
         if (token.startsWith('(')) return 'tok-group';
         if (token.startsWith('#')) return 'tok-color';
-        if (/^[!?]$/.test(token)) return 'tok-marker';
-        if (/^\s+-\s+$/.test(token)) return 'tok-separator';
-        if (/^\d+\s+days?$/i.test(token)) return 'tok-duration';
+        if (/^@timezone/i.test(token) || /^rrule=/i.test(token)) return 'tok-marker';
+        if (token === ':') return 'tok-separator';
+        if (/^\d+\s+(?:days?|weeks?)$/i.test(token)) return 'tok-duration';
         return 'tok-date';
       }
       function highlightLine(line) {
@@ -480,37 +562,111 @@ Aug 25 - AI Meeting
           els.save.textContent = 'Saved on this device';
         }, 250);
       }
-      function meaningfulLines() { return els.items.value.split(/\r?\n/).filter(line => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('!')); }
+      function meaningfulLines() { return els.items.value.split(/\r?\n/).filter(line => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('!') && !/^@timezone\b/i.test(line.trim())); }
       function updateCount() { const n = meaningfulLines().length; els.count.textContent = `${n} item${n === 1 ? '' : 's'}`; }
       function renderEditWarnings(parsed) {
         const warnings = parsed.warnings || [];
         els.warnings.classList.toggle('show', warnings.length > 0);
-        els.warnings.innerHTML = warnings.length ? `<strong>Check the task hierarchy:</strong><br>${warnings.map(esc).join('<br>')}` : '';
+        els.warnings.innerHTML = warnings.length ? `<strong>Check these details:</strong><br>${warnings.map(esc).join('<br>')}` : '';
       }
 
-      function parseDatePart(text, overallStart, overallEnd) {
-        const match = text.trim().match(/^([A-Za-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?$/);
-        if (!match) throw new Error(`“${text.trim()}” is not a recognized date`);
+      function parseDateParts(text, label = 'date') {
+        const match = text.trim().match(/^([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?$/i);
+        if (!match) throw new Error(`“${text.trim()}” is not a recognized ${label}`);
         const month = MONTH_LOOKUP[match[1].toLowerCase()];
-        const day = Number(match[2]);
         if (month === undefined) throw new Error(`Unknown month “${match[1]}”`);
-        const explicitYear = match[3] ? Number(match[3]) : null;
-        const years = explicitYear ? [explicitYear] : Array.from({length: overallEnd.getFullYear() - overallStart.getFullYear() + 1}, (_,i) => overallStart.getFullYear() + i);
-        const candidates = years.map(year => new Date(year, month, day)).filter(d => d.getMonth() === month && d.getDate() === day);
-        if (!candidates.length) throw new Error(`Invalid calendar date “${text.trim()}”`);
-        return candidates.find(d => d >= overallStart && d <= overallEnd) || candidates[0];
+        return {month, day:Number(match[2]), year:match[3] ? Number(match[3]) : null, text:text.trim()};
+      }
+
+      function dateFromParts(parts, year) {
+        const date = new Date(year, parts.month, parts.day);
+        if (date.getFullYear() !== year || date.getMonth() !== parts.month || date.getDate() !== parts.day) throw new Error(`Invalid calendar date “${parts.text}”`);
+        date.setHours(0,0,0,0);
+        return date;
+      }
+
+      function resolveDatePart(text, currentYear, anchorRange = null) {
+        const parts = parseDateParts(text);
+        if (parts.year) return {date:dateFromParts(parts,parts.year), explicitYear:true, unanchored:false};
+        if (anchorRange) {
+          let date = dateFromParts(parts, anchorRange.start.getFullYear());
+          while (date < anchorRange.start && date.getFullYear() < anchorRange.end.getFullYear()) date = dateFromParts(parts, date.getFullYear() + 1);
+          return {date, explicitYear:false, unanchored:false};
+        }
+        return {date:dateFromParts(parts,currentYear), explicitYear:false, unanchored:true};
       }
 
       function splitRange(text) {
-        const sameMonth = text.match(/^([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)\s*-\s*(\d{1,2}(?:,?\s+\d{4})?)$/);
+        const dateToken = '[A-Za-z]+\\s+\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s+\\d{4})?';
+        const sameMonth = text.match(new RegExp(`^(${dateToken})\\s*-\\s*(\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s+\\d{4})?)$`,'i'));
         if (sameMonth) {
           const month = sameMonth[1].match(/^[A-Za-z]+/)[0];
-          const firstYear = sameMonth[1].match(/(\d{4})$/)?.[1];
-          const endHasYear = /\d{4}$/.test(sameMonth[2]);
-          return [sameMonth[1], `${month} ${sameMonth[2]}${!endHasYear && firstYear ? ` ${firstYear}` : ''}`];
+          return [sameMonth[1], `${month} ${sameMonth[2]}`];
         }
-        const across = text.match(/^([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)\s*-\s*([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)$/);
+        const across = text.match(new RegExp(`^(${dateToken})\\s*-\\s*(${dateToken})$`,'i'));
         return across ? [across[1], across[2]] : [text.trim(), text.trim()];
+      }
+
+      function findTaskDelimiter(line) {
+        for (let i = 0; i < line.length; i++) {
+          if (line[i] !== ':') continue;
+          if (/\d/.test(line[i - 1] || '') && /\d/.test(line[i + 1] || '')) continue;
+          return i;
+        }
+        return -1;
+      }
+
+      function parseClockToken(token) {
+        const match = token.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*([ap])?m?$/i);
+        if (!match) throw new Error(`Invalid time “${token.trim()}”`);
+        const hour = Number(match[1]), minute = Number(match[2] || 0), meridiem = match[3]?.toLowerCase() || null;
+        if (minute > 59 || (meridiem ? hour < 1 || hour > 12 : hour > 23)) throw new Error(`Invalid time “${token.trim()}”`);
+        return {hour, minute, meridiem};
+      }
+
+      function clockMinutes(clock, fallbackMeridiem = null) {
+        const meridiem = clock.meridiem || fallbackMeridiem;
+        let hour = clock.hour;
+        if (meridiem === 'a') hour = hour === 12 ? 0 : hour;
+        if (meridiem === 'p') hour = hour === 12 ? 12 : hour + 12;
+        return hour * 60 + clock.minute;
+      }
+
+      function extractTimeRange(value) {
+        const match = value.match(/^(.*?\b\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+(\d{1,2}(?::\d{2})?\s*[ap]?m?)\s*-\s*(\d{1,2}(?::\d{2})?\s*[ap]?m?)$/i);
+        if (!match || !/[:ap]/i.test(`${match[2]}${match[3]}`)) return {dateText:value.trim(), startTime:null, endTime:null};
+        const startClock = parseClockToken(match[2]), endClock = parseClockToken(match[3]);
+        let startTime = clockMinutes(startClock, endClock.meridiem), endTime = clockMinutes(endClock, startClock.meridiem);
+        if (!startClock.meridiem && endClock.meridiem && startTime >= endTime && startTime >= 12 * 60) startTime -= 12 * 60;
+        if (!endClock.meridiem && startClock.meridiem && endTime <= startTime && endTime + 12 * 60 < 24 * 60) endTime += 12 * 60;
+        if (endTime <= startTime) throw new Error('End time must come after start time');
+        return {dateText:match[1].trim(), startTime, endTime};
+      }
+
+      function parseRRule(text) {
+        const values = Object.fromEntries(text.split(';').map(part => {
+          const equals = part.indexOf('=');
+          if (equals < 1) throw new Error(`Invalid RRULE part “${part}”`);
+          return [part.slice(0,equals).trim().toUpperCase(), part.slice(equals + 1).trim().toUpperCase()];
+        }));
+        const unsupported = Object.keys(values).filter(key => !['FREQ','INTERVAL','BYDAY','COUNT','UNTIL'].includes(key));
+        if (unsupported.length) throw new Error(`Unsupported RRULE field “${unsupported[0]}”`);
+        if (!['DAILY','WEEKLY','MONTHLY','YEARLY'].includes(values.FREQ)) throw new Error('RRULE FREQ must be DAILY, WEEKLY, MONTHLY, or YEARLY');
+        const interval = values.INTERVAL ? Number(values.INTERVAL) : 1;
+        const count = values.COUNT ? Number(values.COUNT) : null;
+        if (!Number.isInteger(interval) || interval < 1) throw new Error('RRULE INTERVAL must be a positive integer');
+        if (count !== null && (!Number.isInteger(count) || count < 1)) throw new Error('RRULE COUNT must be a positive integer');
+        const validDays = ['SU','MO','TU','WE','TH','FR','SA'];
+        const byDay = values.BYDAY ? values.BYDAY.split(',') : [];
+        if (byDay.some(day => !validDays.includes(day))) throw new Error('RRULE BYDAY contains an unsupported weekday');
+        let until = null;
+        if (values.UNTIL) {
+          const match = values.UNTIL.match(/^(\d{4})(\d{2})(\d{2})(?:T\d{6}Z?)?$/);
+          if (!match) throw new Error('RRULE UNTIL must use iCalendar YYYYMMDD format');
+          const parts = {year:Number(match[1]), month:Number(match[2]) - 1, day:Number(match[3]), text:values.UNTIL};
+          until = dateFromParts(parts, parts.year);
+        }
+        return {raw:text, freq:values.FREQ, interval, count, byDay, until};
       }
 
       function parseTaskDetail(value) {
@@ -536,7 +692,7 @@ Aug 25 - AI Meeting
           const dash = statusText.indexOf('-');
           status = (dash === -1 ? statusText : statusText.slice(0, dash)).trim();
           note = dash === -1 ? '' : statusText.slice(dash + 1).trim();
-          detail = detail.slice(0, statusMatch.index).trim();
+          detail = detail.slice(0, statusMatch.index).trim().replace(/\s+-\s*$/,'').trim();
         }
         takeColor();
 
@@ -549,43 +705,63 @@ Aug 25 - AI Meeting
         return {name:detail, people, color, status, note, link};
       }
 
-      function parseLine(line, lineNumber, overallStart, overallEnd, depth) {
-        const parts = line.match(/^(\?|\d+\s+days?|[A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:[A-Za-z]+\s+)?\d{1,2})(?:,?\s+\d{4})?)?)\s+-\s+(.+)$/i);
-        if (!parts) {
-          const undated = line.match(/^(.+?)\s+-\s+(\[[\s\S]*)$/i);
-          const meta = parseTaskDetail(undated ? `${undated[1]} ${undated[2]}` : line);
-          return {lineNumber, ...meta, depth, kind:'undated', start:null, end:null};
+      function parseLine(line, lineNumber, currentYear, depth, anchorRange = null) {
+        const delimiter = findTaskDelimiter(line);
+        if (delimiter < 0) throw new Error('Every task must contain a colon after its date or duration');
+        let schedule = line.slice(0,delimiter).trim();
+        const detailText = line.slice(delimiter + 1).trim();
+        const meta = parseTaskDetail(detailText);
+        let rrule = null;
+        const ruleIndex = schedule.toLowerCase().indexOf(',rrule=');
+        if (ruleIndex >= 0) {
+          rrule = parseRRule(schedule.slice(ruleIndex + 7));
+          schedule = schedule.slice(0,ruleIndex).trim();
         }
-        const schedule = parts[1].trim();
-        const meta = parseTaskDetail(parts[2]);
-        if (schedule === '?') return {lineNumber, ...meta, depth, kind:'summary', start:null, end:null};
-        const durationMatch = schedule.match(/^(\d+)\s+days?$/i);
-        if (durationMatch) return {lineNumber, ...meta, depth, kind:'duration', duration:Number(durationMatch[1]), start:null, end:null};
-        const [startText, endText] = splitRange(schedule);
-        const start = parseDatePart(startText, overallStart, overallEnd);
-        let end = parseDatePart(endText, overallStart, overallEnd);
-        if (end < start && !/\d{4}/.test(endText)) end = new Date(end.getFullYear() + 1, end.getMonth(), end.getDate());
+        if (!schedule) return {lineNumber, ...meta, depth, kind:'open', start:null, end:null, startTime:null, endTime:null, rrule, yearAnchorRange:anchorRange, unanchored:false};
+        const durationMatch = schedule.match(/^(\d+)\s+(days?|weeks?)$/i);
+        if (durationMatch) {
+          const multiplier = /^week/i.test(durationMatch[2]) ? 7 : 1;
+          return {lineNumber, ...meta, depth, kind:'duration', duration:Number(durationMatch[1]) * multiplier, start:null, end:null, startTime:null, endTime:null, rrule, yearAnchorRange:anchorRange, unanchored:false};
+        }
+        const timed = extractTimeRange(schedule);
+        const [startText, endText] = splitRange(timed.dateText);
+        const startParts = parseDateParts(startText), endParts = parseDateParts(endText);
+        let startResult, endResult;
+        if (startParts.year && !endParts.year) {
+          startResult = {date:dateFromParts(startParts,startParts.year),explicitYear:true,unanchored:false};
+          endResult = {date:dateFromParts(endParts,startParts.year),explicitYear:false,unanchored:false};
+        } else if (!startParts.year && endParts.year) {
+          endResult = {date:dateFromParts(endParts,endParts.year),explicitYear:true,unanchored:false};
+          let startDate = dateFromParts(startParts,endParts.year);
+          if (startDate > endResult.date) startDate = dateFromParts(startParts,endParts.year - 1);
+          startResult = {date:startDate,explicitYear:false,unanchored:false};
+        } else {
+          startResult = resolveDatePart(startText,currentYear,anchorRange);
+          endResult = resolveDatePart(endText,currentYear,anchorRange);
+        }
+        const start = startResult.date;
+        let end = endResult.date;
+        if (end < start && !endParts.year) end = dateFromParts(endParts, end.getFullYear() + 1);
         if (end < start) throw new Error('End date comes before start date');
-        return {lineNumber, ...meta, depth, kind:'dated', start, end};
+        if ((timed.startTime !== null || timed.endTime !== null) && start.getTime() !== end.getTime()) throw new Error('Times currently require a single calendar date');
+        const explicitYear = startResult.explicitYear || endResult.explicitYear;
+        const yearAnchorRange = explicitYear ? {start:new Date(start),end:new Date(end)} : anchorRange;
+        return {lineNumber, ...meta, depth, kind:'dated', start, end, startTime:timed.startTime, endTime:timed.endTime, rrule, yearAnchorRange, unanchored:startResult.unanchored || endResult.unanchored};
       }
 
       function parseScheduleDate(text) {
-        const match = text.trim().match(/^([A-Za-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?$/);
-        if (!match || MONTH_LOOKUP[match[1].toLowerCase()] === undefined) throw new Error(`Invalid schedule date “${text.trim()}”`);
-        return {month:MONTH_LOOKUP[match[1].toLowerCase()], day:Number(match[2]), year:match[3] ? Number(match[3]) : null};
+        return parseDateParts(text, 'schedule date');
       }
 
       function scheduleDate(parts, year) {
-        const date = new Date(year, parts.month, parts.day);
-        if (date.getMonth() !== parts.month || date.getDate() !== parts.day) throw new Error('Invalid calendar date in schedule declaration');
-        return date;
+        return dateFromParts(parts,year);
       }
 
-      function parseScheduleDeclaration(line, fallbackStart, fallbackEnd) {
+      function parseScheduleDeclaration(line, currentYear, lineNumber) {
         const body = line.replace(/^!\s*/, '').trim();
         if (!body) throw new Error('Schedule name is missing');
-        const dateTail = body.match(/^(.*?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:,?\s+\d{4})?)$/);
-        if (!dateTail) return {title:body, start:null, end:null, explicitRange:false};
+        const dateTail = body.match(/^(.*?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+-\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)$/i);
+        if (!dateTail) return {title:body, start:null, end:null, explicitRange:false, yearAnchorRange:null, warnings:[]};
         const title = dateTail[1].trim();
         if (!title) throw new Error('Schedule name is missing');
         const startParts = parseScheduleDate(dateTail[2]);
@@ -595,17 +771,50 @@ Aug 25 - AI Meeting
         if (startParts.year && endParts.year) { startYear = startParts.year; endYear = endParts.year; }
         else if (startParts.year) { startYear = startParts.year; endYear = startYear + (wrapsYear ? 1 : 0); }
         else if (endParts.year) { endYear = endParts.year; startYear = endYear - (wrapsYear ? 1 : 0); }
-        else {
-          const inferred = parseDatePart(dateTail[2], fallbackStart, fallbackEnd);
-          startYear = inferred.getFullYear();
-          endYear = startYear + (wrapsYear ? 1 : 0);
-        }
+        else { startYear = currentYear; endYear = startYear + (wrapsYear ? 1 : 0); }
         const start = scheduleDate(startParts, startYear), end = scheduleDate(endParts, endYear);
         if (end < start) throw new Error(`Schedule “${title}” ends before it starts`);
-        return {title, start, end, explicitRange:true};
+        const hasYearAnchor = Boolean(startParts.year || endParts.year);
+        const warnings = hasYearAnchor ? [] : [`Line ${lineNumber}: schedule “${title}” has no year anchor; using ${startYear}${endYear === startYear ? '' : `–${endYear}`}.`];
+        return {title, start, end, explicitRange:true, yearAnchorRange:hasYearAnchor ? {start:new Date(start),end:new Date(end)} : null, warnings};
       }
 
-      function parseTaskEntries(entries, parseStart, parseEnd, scheduleId) {
+      function expandRecurringTask(task, rangeEnd) {
+        const rule = task.rrule;
+        if (!rule || !task.start || !task.end) return [];
+        if (rule.until && rule.until < task.start) throw new Error('RRULE UNTIL comes before the first occurrence');
+        const weekdayCodes = ['SU','MO','TU','WE','TH','FR','SA'];
+        const base = task.start;
+        const baseMonday = addDays(base, -((base.getDay() + 6) % 7));
+        const matches = date => {
+          if (rule.freq === 'DAILY') return daysBetween(base,date) % rule.interval === 0 && (!rule.byDay.length || rule.byDay.includes(weekdayCodes[date.getDay()]));
+          if (rule.freq === 'WEEKLY') {
+            const dateMonday = addDays(date, -((date.getDay() + 6) % 7));
+            const week = Math.floor(daysBetween(baseMonday,dateMonday) / 7);
+            const days = rule.byDay.length ? rule.byDay : [weekdayCodes[base.getDay()]];
+            return week % rule.interval === 0 && days.includes(weekdayCodes[date.getDay()]);
+          }
+          if (rule.freq === 'MONTHLY') {
+            const months = (date.getFullYear() - base.getFullYear()) * 12 + date.getMonth() - base.getMonth();
+            return months % rule.interval === 0 && (rule.byDay.length ? rule.byDay.includes(weekdayCodes[date.getDay()]) : date.getDate() === base.getDate());
+          }
+          return (date.getFullYear() - base.getFullYear()) % rule.interval === 0 && date.getMonth() === base.getMonth() && date.getDate() === base.getDate() && (!rule.byDay.length || rule.byDay.includes(weekdayCodes[date.getDay()]));
+        };
+        const limit = rule.until && rule.until < rangeEnd ? rule.until : rangeEnd;
+        const duration = daysBetween(task.start,task.end);
+        const occurrences = [];
+        let total = 1;
+        if (rule.count === 1) return occurrences;
+        for (let date = addDays(base,1), guard = 0; date <= limit && guard < 20000; date = addDays(date,1), guard++) {
+          if (!matches(date)) continue;
+          if (rule.count && total >= rule.count) break;
+          total++;
+          occurrences.push({...task, kind:'occurrence', start:new Date(date), end:addDays(date,duration), rrule:null, occurrenceIndex:total, recurrenceLine:task.lineNumber, hasChildren:false});
+        }
+        return occurrences;
+      }
+
+      function parseTaskEntries(entries, parseStart, parseEnd, scheduleId, currentYear, scheduleAnchorRange = null) {
         const errors = [];
         const warnings = [];
         const tasks = [];
@@ -619,22 +828,36 @@ Aug 25 - AI Meeting
             const depth = whitespace ? Math.max(1, Math.floor(whitespace / 4)) : 0;
             if (depth > stack.length) throw new Error('Indentation jumped more than one level');
             stack.length = depth;
-            const task = parseLine(line, lineNumber, parseStart, parseEnd, depth);
+            const parentIndex = depth ? stack[depth - 1] : null;
+            const parentAnchor = parentIndex !== null && parentIndex !== undefined ? tasks[parentIndex]?.yearAnchorRange : null;
+            const task = parseLine(line, lineNumber, currentYear, depth, parentAnchor || scheduleAnchorRange);
             task.scheduleId = scheduleId;
-            task.parentIndex = depth ? stack[depth - 1] : null;
+            task.parentIndex = parentIndex;
             tasks.push(task);
             stack[depth] = tasks.length - 1;
+            if (task.unanchored) warnings.push(`Line ${lineNumber}: “${line.slice(0,findTaskDelimiter(line)).trim()}” has no year anchor; using ${currentYear}.`);
           } catch (error) { errors.push(`Line ${lineNumber}: ${error.message}.`); }
         });
         tasks.forEach((task, i) => task.hasChildren = tasks.some(child => child.parentIndex === i));
+        tasks.forEach(task => { if (task.kind === 'open') task.kind = task.hasChildren ? 'summary' : 'undated'; });
         tasks.forEach((task, i) => { if (!task.color) task.color = task.hasChildren ? '#083f6f' : PRIMARY_COLORS[i % PRIMARY_COLORS.length]; });
         tasks.forEach((task, i) => {
           if (task.kind !== 'duration') return;
           const previous = tasks.slice(0, i).reverse().find(item => item.depth === task.depth && item.end);
           const parent = task.parentIndex !== null ? tasks[task.parentIndex] : null;
-          task.start = previous ? addDays(previous.end, 1) : parent?.start || overallStart;
+          task.start = previous ? addDays(previous.end, 1) : parent?.start || parseStart;
           task.end = addDays(task.start, task.duration - 1);
         });
+        const recurring = [];
+        tasks.forEach(task => {
+          if (!task.rrule) return;
+          if (!task.start || !task.end) { errors.push(`Line ${task.lineNumber}: RRULE requires a dated or duration task.`); return; }
+          if (task.hasChildren) { errors.push(`Line ${task.lineNumber}: repeating parent tasks are not supported; put RRULE on their dated children.`); return; }
+          try { recurring.push(...expandRecurringTask(task,parseEnd)); }
+          catch (error) { errors.push(`Line ${task.lineNumber}: ${error.message}.`); }
+        });
+        tasks.push(...recurring);
+        tasks.forEach((task, i) => task.hasChildren = tasks.some(child => child.parentIndex === i));
         const belongsTo = (candidate, parentIndex) => {
           let cursor = candidate.parentIndex;
           while (cursor !== null && cursor !== undefined) {
@@ -662,24 +885,35 @@ Aug 25 - AI Meeting
 
       function parseAll() {
         const globalErrors = [];
-        const inferenceStart = new Date();
-        inferenceStart.setHours(0,0,0,0);
+        const globalWarnings = [];
+        const rawLines = els.items.value.split(/\r?\n/);
+        let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        rawLines.forEach((raw,index) => {
+          const line = raw.trim();
+          if (!/^@timezone\b/i.test(line)) return;
+          const match = line.match(/^@timezone\s*=\s*([^\s]+)$/i);
+          if (!match) { globalErrors.push(`Line ${index + 1}: timezone must use @timezone=Area/City.`); return; }
+          try { new Intl.DateTimeFormat('en-US',{timeZone:match[1]}).format(); timezone = match[1]; }
+          catch (_) { globalErrors.push(`Line ${index + 1}: unknown timezone “${match[1]}”.`); }
+        });
+        const inferenceStart = todayForTimezone(timezone);
         const inferenceEnd = new Date(inferenceStart.getFullYear() + 1, inferenceStart.getMonth(), inferenceStart.getDate());
 
         const sections = [];
         let current = {id:'default', title:'Default schedule', named:false, entries:[], start:null, end:null, explicitRange:false, errors:[], warnings:[]};
         let scheduleNumber = 0;
-        els.items.value.split(/\r?\n/).forEach((raw, index) => {
+        rawLines.forEach((raw, index) => {
           const line = raw.trim();
           if (!line || line.startsWith('#')) return;
+          if (/^@timezone\b/i.test(line)) return;
           if (line.startsWith('!')) {
             if (current.entries.length || current.named) sections.push(current);
             try {
-              const declaration = parseScheduleDeclaration(line, inferenceStart, inferenceEnd);
-              current = {id:`schedule-${scheduleNumber++}`, ...declaration, named:true, entries:[], errors:[], warnings:[]};
+              const declaration = parseScheduleDeclaration(line, inferenceStart.getFullYear(), index + 1);
+              current = {id:`schedule-${scheduleNumber++}`, ...declaration, named:true, entries:[], errors:[], warnings:[...(declaration.warnings || [])]};
             } catch (error) {
               globalErrors.push(`Line ${index + 1}: ${error.message}.`);
-              current = {id:`schedule-${scheduleNumber++}`, title:line.replace(/^!\s*/, '') || 'Untitled schedule', named:true, entries:[], start:null, end:null, explicitRange:false, errors:[], warnings:[]};
+              current = {id:`schedule-${scheduleNumber++}`, title:line.replace(/^!\s*/, '') || 'Untitled schedule', named:true, entries:[], start:null, end:null, explicitRange:false, yearAnchorRange:null, errors:[], warnings:[]};
             }
             return;
           }
@@ -691,7 +925,7 @@ Aug 25 - AI Meeting
         sections.forEach(section => {
           const parseStart = section.start || inferenceStart;
           const parseEnd = section.end || inferenceEnd;
-          const parsed = parseTaskEntries(section.entries, parseStart, parseEnd, section.id);
+          const parsed = parseTaskEntries(section.entries, parseStart, parseEnd, section.id, inferenceStart.getFullYear(), section.yearAnchorRange);
           section.tasks = parsed.tasks;
           section.errors.push(...parsed.errors);
           section.warnings.push(...parsed.warnings);
@@ -719,7 +953,7 @@ Aug 25 - AI Meeting
         const selected = hasNamed ? sections.filter(section => selectedScheduleIds.has(section.id)) : sections;
         const tasks = [];
         const errors = [...globalErrors];
-        const warnings = sections.flatMap(section => section.warnings);
+        const warnings = [...globalWarnings, ...sections.flatMap(section => section.warnings)];
         selected.forEach(section => {
           const offset = tasks.length;
           section.tasks.forEach(task => tasks.push({...task, scheduleTitle:section.title, parentIndex:task.parentIndex === null ? null : task.parentIndex + offset}));
@@ -729,7 +963,7 @@ Aug 25 - AI Meeting
         const overallEnd = new Date(Math.max(...selected.map(section => section.end.getTime())));
         if (!tasks.length && !errors.length) errors.push('Add at least one timeline item.');
         const availableSchedules = sections.map(section => ({id:section.id, title:section.title, start:section.start, end:section.end}));
-        return {tasks, errors, warnings, overallStart, overallEnd, availableSchedules, hasNamed};
+        return {tasks, errors, warnings, overallStart, overallEnd, availableSchedules, hasNamed, timezone, today:inferenceStart};
       }
 
       function makeCalendar(start, end) {
@@ -771,7 +1005,7 @@ Aug 25 - AI Meeting
         els.chart.style.setProperty('--timeline-width', `${timelineWidth}px`);
         const monthHtml = months.map(month => `<div class="month-block" style="left:${month.start * dayWidth}px;width:${month.count * dayWidth}px">${esc(month.date.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div>`).join('');
         const dayHtml = days.map((day, i) => `<div class="day-cell${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}" style="left:${i * dayWidth}px"><strong>${day.getDate()}</strong>${esc(day.toLocaleDateString('en-US',{weekday:'narrow'}))}</div>`).join('');
-        const today = new Date(); today.setHours(0,0,0,0);
+        const today = new Date(parsed.today);
         const todayHtml = today >= overallStart && today <= overallEnd ? `<div class="today" style="left:${(daysBetween(overallStart,today) + .5) * dayWidth}px"></div>` : '';
         const mondayIndex = (overallStart.getDay() + 6) % 7;
         const rows = scheduledTasks.map(task => {
@@ -791,7 +1025,7 @@ Aug 25 - AI Meeting
         return true;
       }
 
-      function renderCalendar(parsed = parseAll()) {
+      function renderTimeline(parsed = parseAll()) {
         els.errors.classList.toggle('show', parsed.errors.length > 0);
         els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
         if (parsed.errors.length) return false;
@@ -869,14 +1103,118 @@ Aug 25 - AI Meeting
           }).join('');
 
           const monthWidth = pct(dayCount, 31);
-          return `<section class="calendar-month" style="--month-width:${monthWidth}%">
+          return `<section class="timeline-month" style="--month-width:${monthWidth}%">
             <div class="cal-month-head"><div class="cal-month-name">${esc(monthStart.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div><div class="cal-days" style="grid-template-columns:repeat(${dayCount},1fr)">${dayCells}</div></div>
             <div class="cal-body-shell"><div class="cal-body" style="--days:${dayCount}">${weekendShades}${rows || '<div class="cal-empty">No work scheduled this month.</div>'}</div></div>
           </section>`;
         }).join('');
 
-        els.calendarSummary.textContent = `${monthStarts.length} month${monthStarts.length === 1 ? '' : 's'} · ${tasks.length} item${tasks.length === 1 ? '' : 's'} · parent outlines contain overlapping subtask lanes`;
-        els.calendarChart.innerHTML = monthHtml;
+        els.timelineSummary.textContent = `${monthStarts.length} month${monthStarts.length === 1 ? '' : 's'} · ${tasks.length} item${tasks.length === 1 ? '' : 's'} · parent outlines contain overlapping subtask lanes`;
+        els.timelineChart.innerHTML = monthHtml;
+        return true;
+      }
+
+      function calendarTextColor(color) {
+        const value = String(color).match(/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i)?.[1];
+        if (!value) return '#fff';
+        const hex = value.length === 3 ? value.split('').map(char => char + char).join('') : value.slice(0, 6);
+        const [r,g,b] = [0,2,4].map(offset => parseInt(hex.slice(offset, offset + 2), 16));
+        return (r * 299 + g * 587 + b * 114) / 1000 > 165 ? '#17242d' : '#fff';
+      }
+
+      function calendarRangeTitle(start, end) {
+        if (start.getTime() === end.getTime()) return start.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+        if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) return `${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.getDate()}, ${end.getFullYear()}`;
+        if (start.getFullYear() === end.getFullYear()) return `${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric'})}, ${end.getFullYear()}`;
+        return `${pretty(start)} – ${pretty(end)}`;
+      }
+
+      function renderCalendar(parsed = parseAll()) {
+        els.errors.classList.toggle('show', parsed.errors.length > 0);
+        els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
+        if (parsed.errors.length) return false;
+
+        const {tasks, overallStart, overallEnd} = parsed;
+        const firstDay = new Date(overallStart); firstDay.setHours(0,0,0,0);
+        const lastDay = new Date(overallEnd); lastDay.setHours(0,0,0,0);
+        const today = new Date(parsed.today);
+        if (!calendarViewDate) calendarViewDate = today >= firstDay && today <= lastDay ? new Date(today) : new Date(firstDay);
+        if (calendarViewDate < firstDay) calendarViewDate = new Date(firstDay);
+        if (calendarViewDate > lastDay) calendarViewDate = new Date(lastDay);
+
+        let periodStart, periodEnd, logicalStart, logicalEnd, columns, rowCount, title;
+        if (calendarViewMode === 'month') {
+          logicalStart = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+          logicalEnd = new Date(logicalStart.getFullYear(), logicalStart.getMonth() + 1, 0);
+          periodStart = addDays(logicalStart, -logicalStart.getDay());
+          periodEnd = addDays(periodStart, 41);
+          columns = 7;
+          rowCount = 6;
+          title = logicalStart.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+        } else {
+          columns = Number(calendarViewMode);
+          periodStart = calendarViewMode === '7' ? addDays(calendarViewDate, -calendarViewDate.getDay()) : new Date(calendarViewDate);
+          periodEnd = addDays(periodStart, columns - 1);
+          logicalStart = periodStart;
+          logicalEnd = periodEnd;
+          rowCount = 1;
+          title = calendarRangeTitle(periodStart, periodEnd);
+        }
+
+        const events = tasks.filter(task => task.start && task.end);
+        const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        const weekdayCells = Array.from({length:columns}, (_, index) => {
+          const day = addDays(periodStart, index);
+          const weekday = day.toLocaleDateString('en-US', {weekday:'short'});
+          const date = calendarViewMode === 'month' ? '' : `<strong>${esc(day.toLocaleDateString('en-US',{month:'short',day:'numeric'}))}</strong>`;
+          return `<div class="month-weekday">${esc(weekday)}${date}</div>`;
+        }).join('');
+
+        const rows = Array.from({length:rowCount}, (_, rowIndex) => {
+          const rowStart = addDays(periodStart, rowIndex * columns);
+          const rowEnd = addDays(rowStart, columns - 1);
+          const segments = events.map((task, taskIndex) => {
+            if (task.end < rowStart || task.start > rowEnd) return null;
+            const clippedStart = task.start < rowStart ? rowStart : task.start;
+            const clippedEnd = task.end > rowEnd ? rowEnd : task.end;
+            return {task, taskIndex, startColumn:daysBetween(rowStart,clippedStart), endColumn:daysBetween(rowStart,clippedEnd)};
+          }).filter(Boolean).sort((a,b) => a.startColumn - b.startColumn || a.task.depth - b.task.depth || b.endColumn - a.endColumn || a.taskIndex - b.taskIndex);
+          const laneEnds = [];
+          segments.forEach(segment => {
+            let lane = laneEnds.findIndex(endColumn => endColumn < segment.startColumn);
+            if (lane === -1) lane = laneEnds.length;
+            segment.lane = lane;
+            laneEnds[lane] = segment.endColumn;
+          });
+          const minimumHeight = calendarViewMode === 'month' ? 112 : 360;
+          const rowHeight = Math.max(minimumHeight, 42 + laneEnds.length * 22);
+          const dayCells = Array.from({length:columns}, (_, index) => {
+            const day = addDays(rowStart, index);
+            const outside = calendarViewMode === 'month' && (day < logicalStart || day > logicalEnd);
+            const label = day.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+            return `<div class="month-day${outside ? ' outside' : ''}${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}${sameDay(day,today) ? ' today' : ''}" aria-label="${esc(label)}"><div class="month-date"><span>${day.getDate()}</span></div></div>`;
+          }).join('');
+          const eventBars = segments.map(({task,startColumn,endColumn,lane}) => {
+            const single = sameDay(task.start, task.end);
+            const tooltip = `${task.name}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
+            const tag = task.link ? 'a' : 'span';
+            const link = task.link ? ` href="${esc(task.link)}" target="_blank" rel="noopener noreferrer"` : '';
+            const depthMarker = task.depth ? `${'↳ '.repeat(Math.min(task.depth, 3))}` : '';
+            const classes = `calendar-event${task.hasChildren ? ' parent-event' : ''}${task.start < rowStart ? ' continues-before' : ''}${task.end > rowEnd ? ' continues-after' : ''}`;
+            return `<${tag} class="${classes}"${link} title="${esc(tooltip)}" style="--event-column:${startColumn};--event-span:${endColumn - startColumn + 1};--event-top:${34 + lane * 22}px;--event-color:${esc(task.color)};--event-text:${calendarTextColor(task.color)}">${depthMarker}${esc(task.name)}</${tag}>`;
+          }).join('');
+          return `<section class="calendar-week" style="--calendar-columns:${columns};--calendar-row-height:${rowHeight}px"><div class="calendar-week-days">${dayCells}</div>${eventBars}</section>`;
+        }).join('');
+
+        const visibleEventCount = events.filter(task => task.start <= logicalEnd && task.end >= logicalStart).length;
+        els.monthCalendarTitle.textContent = title;
+        els.monthCalendarSummary.textContent = `${visibleEventCount} dated task${visibleEventCount === 1 ? '' : 's'} in view · no scheduled tasks hidden`;
+        els.monthCalendarWeekdays.style.setProperty('--calendar-columns', columns);
+        els.monthCalendarWeekdays.innerHTML = weekdayCells;
+        els.monthCalendarGrid.innerHTML = rows;
+        els.calendarPrev.disabled = logicalStart <= firstDay;
+        els.calendarNext.disabled = logicalEnd >= lastDay;
+        els.calendarViewButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.calendarView === calendarViewMode)));
         return true;
       }
 
@@ -949,10 +1287,11 @@ Aug 25 - AI Meeting
         </div>`;
       }
 
-      function renderToday(parsed = parseAll(), referenceDate = new Date()) {
+      function renderToday(parsed = parseAll(), referenceDate = null) {
         els.errors.classList.toggle('show', parsed.errors.length > 0);
         els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
         if (parsed.errors.length) return false;
+        referenceDate = referenceDate || parsed.today;
         const today = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
         const explicitlyActive = task => /progress|active|block|stuck|review/i.test(task.status);
         const taskResources = (task, index) => {
@@ -1004,7 +1343,7 @@ Aug 25 - AI Meeting
         els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
         if (parsed.errors.length) return false;
 
-        const rows = parsed.tasks.map(task => taskTableRow(task)).join('');
+        const rows = parsed.tasks.map(task => taskTableRow(task,{referenceDate:parsed.today})).join('');
         const dated = parsed.tasks.filter(task => task.end).length;
         const undated = parsed.tasks.length - dated;
         els.tasksSummary.textContent = `${parsed.tasks.length} task${parsed.tasks.length === 1 ? '' : 's'} · ${dated} dated · ${undated} undated`;
@@ -1046,7 +1385,7 @@ Aug 25 - AI Meeting
         els.groupsChart.style.setProperty('--timeline-width', `${timelineWidth}px`);
         const monthHtml = months.map(month => `<div class="month-block" style="left:${month.start * dayWidth}px;width:${month.count * dayWidth}px">${esc(month.date.toLocaleDateString('en-US',{month:'long',year:'numeric'}))}</div>`).join('');
         const dayHtml = days.map((day, i) => `<div class="day-cell${day.getDay() === 0 || day.getDay() === 6 ? ' weekend' : ''}" style="left:${i * dayWidth}px"><strong>${day.getDate()}</strong>${esc(day.toLocaleDateString('en-US',{weekday:'narrow'}))}</div>`).join('');
-        const today = new Date(); today.setHours(0,0,0,0);
+        const today = new Date(parsed.today);
         const todayHtml = today >= parsed.overallStart && today <= parsed.overallEnd ? `<div class="today" style="left:${(daysBetween(parsed.overallStart,today) + .5) * dayWidth}px"></div>` : '';
         const mondayIndex = (parsed.overallStart.getDay() + 6) % 7;
 
@@ -1094,7 +1433,8 @@ Aug 25 - AI Meeting
 
       function activeViewName() {
         if (els.todayTab.getAttribute('aria-selected') === 'true') return 'today';
-        if (els.displayTab.getAttribute('aria-selected') === 'true') return 'timeline';
+        if (els.displayTab.getAttribute('aria-selected') === 'true') return 'gantt';
+        if (els.timelineTab.getAttribute('aria-selected') === 'true') return 'timeline';
         if (els.calendarTab.getAttribute('aria-selected') === 'true') return 'calendar';
         if (els.groupsTab.getAttribute('aria-selected') === 'true') return 'groups';
         if (els.tasksTab.getAttribute('aria-selected') === 'true') return 'tasks';
@@ -1104,7 +1444,8 @@ Aug 25 - AI Meeting
       function renderActiveView(parsed) {
         const active = activeViewName();
         if (active === 'today') return renderToday(parsed);
-        if (active === 'timeline') return render(parsed);
+        if (active === 'gantt') return render(parsed);
+        if (active === 'timeline') return renderTimeline(parsed);
         if (active === 'calendar') return renderCalendar(parsed);
         if (active === 'groups') return renderGroups(parsed);
         if (active === 'tasks') return renderTasks(parsed);
@@ -1115,7 +1456,8 @@ Aug 25 - AI Meeting
         const views = [
           {name:'edit', tab:els.editTab, panel:els.editPanel},
           {name:'today', tab:els.todayTab, panel:els.todayPanel},
-          {name:'timeline', tab:els.displayTab, panel:els.displayPanel},
+          {name:'gantt', tab:els.displayTab, panel:els.displayPanel},
+          {name:'timeline', tab:els.timelineTab, panel:els.timelinePanel},
           {name:'calendar', tab:els.calendarTab, panel:els.calendarPanel},
           {name:'groups', tab:els.groupsTab, panel:els.groupsPanel},
           {name:'tasks', tab:els.tasksTab, panel:els.tasksPanel}
@@ -1125,7 +1467,7 @@ Aug 25 - AI Meeting
           view.tab.setAttribute('aria-selected', String(active));
           view.panel.classList.toggle('active', active);
         });
-        if (name === 'timeline') document.querySelector('.chart-scroll').scrollLeft = 0;
+        if (name === 'gantt') document.querySelector('.chart-scroll').scrollLeft = 0;
       }
 
       els.items.addEventListener('input', () => {
@@ -1137,11 +1479,29 @@ Aug 25 - AI Meeting
       els.items.addEventListener('scroll', syncHighlightScroll);
       els.editTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); renderEditWarnings(parsed); selectTab('edit'); });
       els.todayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderToday(parsed)) selectTab('today'); else selectTab('edit'); });
-      els.displayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('timeline'); else selectTab('edit'); });
+      els.displayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('gantt'); else selectTab('edit'); });
+      els.timelineTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderTimeline(parsed)) selectTab('timeline'); else selectTab('edit'); });
       els.calendarTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderCalendar(parsed)) selectTab('calendar'); else selectTab('edit'); });
       els.groupsTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderGroups(parsed)) selectTab('groups'); else selectTab('edit'); });
       els.tasksTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderTasks(parsed)) selectTab('tasks'); else selectTab('edit'); });
-      document.querySelector('#build-button').addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('timeline'); });
+      document.querySelector('#build-button').addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('gantt'); });
+      els.calendarPrev.addEventListener('click', () => {
+        if (calendarViewMode === 'month') calendarViewDate.setMonth(calendarViewDate.getMonth() - 1);
+        else calendarViewDate = addDays(calendarViewDate, -Number(calendarViewMode));
+        renderCalendar(parseAll());
+      });
+      els.calendarNext.addEventListener('click', () => {
+        if (calendarViewMode === 'month') calendarViewDate.setMonth(calendarViewDate.getMonth() + 1);
+        else calendarViewDate = addDays(calendarViewDate, Number(calendarViewMode));
+        renderCalendar(parseAll());
+      });
+      els.calendarToday.addEventListener('click', () => { const parsed=parseAll(); calendarViewDate = new Date(parsed.today); renderCalendar(parsed); });
+      els.calendarViewButtons.forEach(button => button.addEventListener('click', () => {
+        calendarViewMode = button.dataset.calendarView;
+        if (calendarViewMode === 'month') calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
+        if (calendarViewMode === '7') calendarViewDate = addDays(calendarViewDate, -calendarViewDate.getDay());
+        renderCalendar(parseAll());
+      }));
       els.scheduleMenu.addEventListener('change', event => {
         if (!(event.target instanceof HTMLInputElement)) return;
         const checked = [...els.scheduleMenu.querySelectorAll('input:checked')].map(input => input.value);
@@ -1154,7 +1514,7 @@ Aug 25 - AI Meeting
       document.querySelector('.tabs').addEventListener('keydown', event => {
         if (!['ArrowLeft','ArrowRight'].includes(event.key)) return;
         event.preventDefault();
-        const tabs = [els.editTab, els.todayTab, els.displayTab, els.calendarTab, els.groupsTab, els.tasksTab];
+        const tabs = [els.editTab, els.todayTab, els.displayTab, els.timelineTab, els.calendarTab, els.groupsTab, els.tasksTab];
         const current = tabs.findIndex(tab => tab.getAttribute('aria-selected') === 'true');
         const next = tabs[(current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
         next.focus(); next.click();
@@ -1166,6 +1526,7 @@ Aug 25 - AI Meeting
       renderEditWarnings(initial);
       renderToday(initial);
       render(initial);
+      renderTimeline(initial);
       renderCalendar(initial);
       renderGroups(initial);
       renderTasks(initial);
