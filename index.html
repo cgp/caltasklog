@@ -80,7 +80,7 @@
 
     .editor-card { background: var(--surface); border: 1px solid var(--line); border-radius: 0; box-shadow: var(--shadow); overflow: hidden; }
     .editor-head { padding: 18px 32px 16px; border-bottom: 1px solid var(--line-soft); display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
-    .eyebrow { margin: 0 0 8px; color: var(--accent); font-weight: 800; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+    .eyebrow { margin: 0 0 4px; color: var(--accent); font-weight: 800; font-size: 15px; letter-spacing: .1em; text-transform: uppercase; }
     h2 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 4vw, 43px); line-height: 1.05; letter-spacing: -.035em; margin: 0; font-weight: 600; }
     .lede { margin: 4px 0 0; color: var(--muted); line-height: 1.55; }
     .status { font-size: 12px; color: var(--muted); white-space: nowrap; margin-top: 3px; }
@@ -129,9 +129,9 @@
     .btn-secondary { background: var(--surface); border: 1px solid var(--line); }
     .btn-secondary:hover { background: #f3f5f1; }
 
-    .error-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #fff1ed; border: 1px solid #efc9c1; color: var(--danger); padding: 12px 15px; font-size: 13px; line-height: 1.5; }
+    .error-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #ffebe7; border: 2px solid #c9372c; color: #8f1711; padding: 11px 14px; font-size: 13px; line-height: 1.5; }
     .error-box.show { display: block; }
-    .warning-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #fff7d6; border: 1px solid #e7cc72; color: #6f5200; padding: 12px 15px; font-size: 13px; line-height: 1.5; }
+    .warning-box { display: none; margin: 0 32px 28px; border-radius: 11px; background: #fff1b8; border: 2px solid #a87400; color: #513900; padding: 11px 14px; font-size: 13px; line-height: 1.5; }
     .warning-box.show { display: block; }
     .editor-body .error-box, .editor-body .warning-box { margin: 0 0 14px; }
 
@@ -656,6 +656,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         const plan = savedPlans.find(entry => entry.id === id);
         if (!plan) return;
         clearTimeout(saveTimer);
+        clearTimeout(validationTimer);
         activePlanId = plan.id;
         els.items.value = plan.items;
         selectedScheduleIds = null;
@@ -664,6 +665,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         renderPlanControls();
         const parsed = parseAll();
         renderSchedulePicker(parsed);
+        renderEditErrors(parsed);
         renderEditWarnings(parsed);
         persistPlans();
       }
@@ -692,6 +694,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
 
       let saveTimer;
+      let validationTimer;
       function save() {
         const plan = activePlan();
         if (!plan || plan.readOnly) return;
@@ -750,10 +753,26 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
       function meaningfulLines() { return els.items.value.split(/\r?\n/).filter(line => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('!') && !/^@timezone\b/i.test(line.trim())); }
       function updateCount() { const n = meaningfulLines().length; els.count.textContent = `${n} item${n === 1 ? '' : 's'}`; }
+      function renderEditErrors(parsed) {
+        const errors = parsed.errors || [];
+        els.errors.classList.toggle('show', errors.length > 0);
+        els.errors.innerHTML = errors.length ? `<strong>Please check ${errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${errors.map(esc).join('<br>')}` : '';
+      }
       function renderEditWarnings(parsed) {
         const warnings = parsed.warnings || [];
         els.warnings.classList.toggle('show', warnings.length > 0);
         els.warnings.innerHTML = warnings.length ? `<strong>Check these details:</strong><br>${warnings.map(esc).join('<br>')}` : '';
+      }
+      function validateEditor() {
+        clearTimeout(validationTimer);
+        const parsed = parseAll();
+        renderSchedulePicker(parsed);
+        renderEditErrors(parsed);
+        renderEditWarnings(parsed);
+      }
+      function scheduleEditorValidation() {
+        clearTimeout(validationTimer);
+        validationTimer = setTimeout(validateEditor, 1000);
       }
 
       function parseDateParts(text, label = 'date') {
@@ -1766,17 +1785,15 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
 
       els.items.addEventListener('input', () => {
-        save(); updateCount(); updateHighlight(); els.errors.classList.remove('show');
-        const parsed = parseAll();
-        renderSchedulePicker(parsed);
-        renderEditWarnings(parsed);
+        save(); updateCount(); updateHighlight(); scheduleEditorValidation();
       });
+      els.items.addEventListener('blur', validateEditor);
       els.items.addEventListener('scroll', syncHighlightScroll);
       els.planSelect.addEventListener('change', () => activatePlan(els.planSelect.value));
       els.savePlan.addEventListener('click', savePlanAs);
       els.deletePlan.addEventListener('click', deleteActivePlan);
       els.downloadPlan.addEventListener('click', downloadActivePlan);
-      els.editTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); renderEditWarnings(parsed); selectTab('edit'); });
+      els.editTab.addEventListener('click', () => { validateEditor(); selectTab('edit'); });
       els.todayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderToday(parsed)) selectTab('today'); else selectTab('edit'); });
       els.displayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('gantt'); else selectTab('edit'); });
       els.timelineTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderTimeline(parsed)) selectTab('timeline'); else selectTab('edit'); });
