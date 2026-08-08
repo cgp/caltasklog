@@ -50,17 +50,18 @@
     .brand-c strong, .brand-t strong, .brand-l strong { font-weight: 650; }
     .brand p { display: none; }
 
-    .tabs { display: inline-flex; padding: 0; background: #fff; border-left: 1px solid #d6dde2; }
+    .tabs { display: inline-flex; min-width: 0; overflow-x: auto; padding: 0; background: #fff; border-left: 1px solid #d6dde2; }
     .tab { position: relative; border: 0; border-right: 1px solid #d6dde2; background: #fff; padding: 0 25px; cursor: pointer; color: #2f3832; font-weight: 600; font-size: 13px; }
     .tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: transparent; }
     .tab[aria-selected="true"] { color: #0b5ea8; }
     .tab[aria-selected="true"]::after { background: #0b5ea8; }
     .tab:hover { background: #f7f9fa; }
-    .schedule-picker { display: none; position: relative; margin-left: auto; min-width: 175px; border-left: 1px solid #d6dde2; }
+    .topbar-actions { display: flex; flex: 0 0 auto; align-items: stretch; margin-left: auto; }
+    .schedule-picker { display: none; position: relative; min-width: 175px; border-left: 1px solid #d6dde2; }
     .schedule-picker.show { display: block; }
     .schedule-toggle { height: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 15px; cursor: pointer; color: #30414b; font-size: 12px; font-weight: 750; list-style: none; user-select: none; }
     .schedule-toggle::-webkit-details-marker { display: none; }
-    .schedule-toggle::after { content: "▾"; color: #6e7c84; font-size: 10px; }
+    .schedule-toggle::after { content: "▾"; color: #6e7c84; font-size: 16px; line-height: 1; }
     .schedule-picker[open] .schedule-toggle { background: #f5f8fa; }
     .schedule-menu { position: absolute; top: calc(100% + 7px); right: 0; width: 270px; padding: 7px; background: #fff; border: 1px solid #cad5dc; border-radius: 9px; box-shadow: 0 14px 35px rgba(23,52,73,.16); }
     .schedule-option { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; padding: 9px 8px; border-radius: 6px; cursor: pointer; }
@@ -68,10 +69,9 @@
     .schedule-option input { margin: 2px 0 0; accent-color: #0b5ea8; }
     .schedule-option strong { display: block; color: #263840; font-size: 12px; line-height: 1.25; }
     .schedule-option small { display: block; margin-top: 2px; color: #78858c; font-size: 10px; }
-    .past-month-toggle { display: none; align-items: center; gap: 7px; margin: 0 0 0 auto; padding: 0 13px; border-left: 1px solid #d6dde2; color: #52616a; font-size: 11px; font-weight: 750; white-space: nowrap; cursor: pointer; }
+    .past-month-toggle { display: none; align-items: center; gap: 7px; margin: 0; padding: 0 13px; border-left: 1px solid #d6dde2; color: #52616a; font-size: 11px; font-weight: 750; white-space: nowrap; cursor: pointer; }
     .past-month-toggle.show { display: flex; }
     .past-month-toggle input { width: 15px; height: 15px; margin: 0; accent-color: #0b5ea8; }
-    .past-month-toggle + .schedule-picker { margin-left: 0; }
     .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(23,107,77,.22); outline-offset: 2px; }
 
     .panel { display: none; }
@@ -114,8 +114,11 @@
     .plan-controls { display: grid; grid-template-columns: minmax(160px, 1fr) auto; gap: 10px; align-items: end; margin-bottom: 18px; padding: 12px 14px; background: #f4f7f8; border: 1px solid #d2dce1; }
     .plan-controls label { margin: 0; color: #50616b; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
     .plan-controls select { display: block; width: 100%; height: 34px; margin-top: 5px; padding: 0 9px; border: 1px solid #bdcbd3; border-radius: 6px; background: #fff; color: #263840; font-size: 12px; }
-    .plan-controls button { height: 34px; padding: 0 12px; border: 1px solid #bdcbd3; border-radius: 6px; background: #fff; color: #234358; cursor: pointer; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .plan-actions { display: inline-flex; overflow: hidden; border: 1px solid #bdcbd3; border-radius: 6px; background: #fff; }
+    .plan-controls button { height: 32px; padding: 0 12px; border: 0; border-right: 1px solid #bdcbd3; background: #fff; color: #234358; cursor: pointer; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .plan-controls button:last-child { border-right: 0; }
     .plan-controls button:hover { background: #eaf1f5; }
+    .plan-controls button:disabled { color: #9aa7ae; background: #f4f6f7; cursor: not-allowed; }
     .plan-note { grid-column: 1 / -1; margin: 0; color: #667781; font-size: 11px; }
     .editor-foot { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-top: 14px; }
     .syntax { color: var(--muted); font-size: 12px; line-height: 1.55; }
@@ -326,7 +329,8 @@
       .editor-foot { flex-direction: column; }
       .editor-foot .btn { width: 100%; }
       .plan-controls { grid-template-columns: 1fr auto; }
-      .plan-controls button { width: 100%; }
+      .plan-actions { grid-column: 1 / -1; width: 100%; }
+      .plan-controls button { flex: 1; }
       .display-head { align-items: flex-start; flex-direction: column; }
       :root { --label-width: 230px; }
       .cal-month-head { grid-template-columns: 122px 1fr; }
@@ -371,11 +375,13 @@
         <button class="tab" id="groups-tab" role="tab" aria-selected="false" aria-controls="groups-panel">Groups</button>
         <button class="tab" id="tasks-tab" role="tab" aria-selected="false" aria-controls="tasks-panel">Tasks</button>
       </div>
-      <label class="past-month-toggle" id="past-month-control"><input type="checkbox" id="show-empty-past-months">Show empty past months</label>
-      <details class="schedule-picker" id="schedule-picker">
-        <summary class="schedule-toggle"><span id="schedule-picker-label">Schedules</span></summary>
-        <div class="schedule-menu" id="schedule-menu" role="group" aria-label="Displayed schedules"></div>
-      </details>
+      <div class="topbar-actions">
+        <label class="past-month-toggle" id="past-month-control"><input type="checkbox" id="show-empty-past-months">Show empty past months</label>
+        <details class="schedule-picker" id="schedule-picker">
+          <summary class="schedule-toggle"><span id="schedule-picker-label">Schedules</span></summary>
+          <div class="schedule-menu" id="schedule-menu" role="group" aria-label="Displayed schedules"></div>
+        </details>
+      </div>
     </header>
 
     <section class="panel active" id="edit-panel" role="tabpanel" aria-labelledby="edit-tab">
@@ -388,16 +394,20 @@
           <div class="status" id="save-status">Saved on this device</div>
         </div>
         <div class="editor-body">
+          <div class="warning-box" id="warnings" role="status"></div>
           <div class="plan-controls" aria-label="Saved editor entries">
             <label for="plan-select">Saved entry<select id="plan-select"></select></label>
-            <button id="save-plan" type="button">Save as</button>
+            <div class="plan-actions" role="group" aria-label="Saved entry actions">
+              <button id="save-plan" type="button">Save as</button>
+              <button id="delete-plan" type="button">Delete</button>
+              <button id="download-plan" type="button">Download</button>
+            </div>
             <p class="plan-note" id="plan-note"></p>
           </div>
           <div class="field-row">
             <label for="items">Timeline items</label>
             <span class="line-count" id="line-count">0 items</span>
           </div>
-          <div class="warning-box" id="warnings" role="status"></div>
           <div class="syntax-editor">
             <pre class="syntax-highlight" id="syntax-highlight" aria-hidden="true"></pre>
             <textarea id="items" spellcheck="false" aria-describedby="syntax-help"></textarea>
@@ -550,7 +560,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
 
       const els = {
         items: document.querySelector('#items'), highlight: document.querySelector('#syntax-highlight'), count: document.querySelector('#line-count'),
-        planSelect: document.querySelector('#plan-select'), savePlan: document.querySelector('#save-plan'), planNote: document.querySelector('#plan-note'),
+        planSelect: document.querySelector('#plan-select'), savePlan: document.querySelector('#save-plan'), deletePlan: document.querySelector('#delete-plan'), downloadPlan: document.querySelector('#download-plan'), planNote: document.querySelector('#plan-note'),
         errors: document.querySelector('#errors'), warnings: document.querySelector('#warnings'), summary: document.querySelector('#summary'),
         chart: document.querySelector('#chart'), save: document.querySelector('#save-status'),
         timelineChart: document.querySelector('#timeline-chart'), timelineSummary: document.querySelector('#timeline-summary'),
@@ -638,6 +648,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.planSelect.innerHTML = savedPlans.map(entry => `<option value="${esc(entry.id)}"${entry.id === plan.id ? ' selected' : ''}>${esc(entry.name)}${entry.readOnly ? ' — read only' : ''}</option>`).join('');
         els.items.readOnly = Boolean(plan.readOnly);
         els.items.setAttribute('aria-readonly', String(Boolean(plan.readOnly)));
+        els.deletePlan.disabled = Boolean(plan.readOnly);
         els.planNote.textContent = plan.readOnly ? 'This built-in example is protected. Use Save as to make an editable copy.' : 'Changes to this entry save automatically on this device.';
         els.save.textContent = plan.readOnly ? 'Default example is read only' : 'Saved on this device';
       }
@@ -708,6 +719,34 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         renderPlanControls();
         persistPlans();
         els.save.textContent = 'Saved on this device';
+      }
+      function deleteActivePlan() {
+        const plan = activePlan();
+        if (!plan || plan.readOnly) return;
+        let confirmed = false;
+        try { confirmed = window.confirm(`Delete “${plan.name}”? This cannot be undone.`); }
+        catch (_) { return; }
+        if (!confirmed) return;
+        clearTimeout(saveTimer);
+        const deletedName = plan.name;
+        const deletedIndex = savedPlans.findIndex(entry => entry.id === plan.id);
+        savedPlans = savedPlans.filter(entry => entry.id !== plan.id);
+        activePlanId = savedPlans[Math.max(0, deletedIndex - 1)]?.id || savedPlans[0].id;
+        activatePlan(activePlanId);
+        els.planNote.textContent = `Deleted “${deletedName}”. ${els.planNote.textContent}`;
+      }
+      function downloadActivePlan() {
+        const plan = activePlan();
+        if (!plan) return;
+        const filename = `${plan.name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'timeline-schedule'}.txt`;
+        const url = URL.createObjectURL(new Blob([els.items.value], {type:'text/plain;charset=utf-8'}));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
       }
       function meaningfulLines() { return els.items.value.split(/\r?\n/).filter(line => line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('!') && !/^@timezone\b/i.test(line.trim())); }
       function updateCount() { const n = meaningfulLines().length; els.count.textContent = `${n} item${n === 1 ? '' : 's'}`; }
@@ -1735,6 +1774,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       els.items.addEventListener('scroll', syncHighlightScroll);
       els.planSelect.addEventListener('change', () => activatePlan(els.planSelect.value));
       els.savePlan.addEventListener('click', savePlanAs);
+      els.deletePlan.addEventListener('click', deleteActivePlan);
+      els.downloadPlan.addEventListener('click', downloadActivePlan);
       els.editTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); renderEditWarnings(parsed); selectTab('edit'); });
       els.todayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (renderToday(parsed)) selectTab('today'); else selectTab('edit'); });
       els.displayTab.addEventListener('click', () => { const parsed=parseAll(); renderSchedulePicker(parsed); if (render(parsed)) selectTab('gantt'); else selectTab('edit'); });
