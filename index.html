@@ -110,6 +110,12 @@
     .tok-color { color: #c53732; font-weight: 800; }
     .tok-separator { color: #9aa49e; }
     .field-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .timeline-editor-actions { display: flex; align-items: center; gap: 8px; }
+    .timeline-indent-actions { display: inline-flex; overflow: hidden; border: 1px solid #bdcbd3; border-radius: 6px; background: #fff; }
+    .timeline-indent-actions button { min-height: 28px; padding: 0 9px; border: 0; border-right: 1px solid #d5dee3; background: #fff; color: #345263; cursor: pointer; font-size: 10px; font-weight: 850; }
+    .timeline-indent-actions button:last-child { border-right: 0; }
+    .timeline-indent-actions button:hover:not(:disabled) { background: #eaf4f5; color: #087f86; }
+    .timeline-indent-actions button:disabled { color: #a5b0b6; background: #f4f6f7; cursor: not-allowed; }
     .line-count { color: var(--muted); font-size: 12px; }
     .plan-controls { display: grid; grid-template-columns: minmax(160px, 1fr) auto; gap: 10px; align-items: end; margin-bottom: 18px; padding: 12px 14px; background: #f4f7f8; border: 1px solid #d2dce1; }
     .plan-controls label { margin: 0; color: #50616b; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
@@ -219,13 +225,11 @@
     .month-calendar-title { min-width: 0; text-align: center; }
     .month-calendar-title h2 { font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 850; letter-spacing: -.02em; }
     .month-calendar-summary { margin-top: 3px; color: var(--muted); font-size: 10px; }
-    .month-nav { border: 1px solid #c7d2d9; border-radius: 8px; background: #fff; padding: 7px 11px; color: #234358; cursor: pointer; font-size: 12px; font-weight: 800; }
-    .month-nav:hover:not(:disabled) { background: #edf4f8; }
-    .month-nav:disabled { opacity: .38; cursor: default; }
-    .calendar-view-switch { display: inline-flex; overflow: hidden; border: 1px solid #c7d2d9; border-radius: 8px; background: #fff; }
-    .calendar-view-button { border: 0; border-right: 1px solid #d5dee3; background: transparent; padding: 7px 9px; color: #566873; cursor: pointer; font-size: 10px; font-weight: 800; white-space: nowrap; }
-    .calendar-view-button:last-child { border-right: 0; }
-    .calendar-view-button:hover { background: #edf4f8; }
+    .calendar-nav-switch, .calendar-view-switch { display: inline-flex; overflow: hidden; border: 1px solid #c7d2d9; border-radius: 8px; background: #fff; }
+    .calendar-nav-button, .calendar-view-button { border: 0; border-right: 1px solid #d5dee3; background: transparent; padding: 7px 9px; color: #566873; cursor: pointer; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .calendar-nav-button:last-child, .calendar-view-button:last-child { border-right: 0; }
+    .calendar-nav-button:hover:not(:disabled), .calendar-view-button:hover { background: #edf4f8; }
+    .calendar-nav-button:disabled { opacity: .38; cursor: default; }
     .calendar-view-button[aria-pressed="true"] { background: #0b5ea8; color: #fff; }
     .month-calendar-weekdays { display: grid; grid-template-columns: repeat(var(--calendar-columns, 7), minmax(0, 1fr)); }
     .month-calendar-weekdays { background: #edf2f5; border-bottom: 1px solid #c9d4db; }
@@ -299,6 +303,118 @@
     .today-empty { padding: 54px 24px; text-align: center; color: #75838b; }
     .today-empty strong { display: block; margin-bottom: 5px; color: #344851; font-size: 15px; }
 
+    .meeting-log-shell { margin-top: 14px; background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
+    .meeting-log-bar { min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 9px 14px; border-bottom: 1px solid #cdd7df; background: #f7fafb; }
+    .meeting-log-bar h2 { margin: 0; color: #18394f; font-family: inherit; font-size: 14px; font-weight: 900; letter-spacing: 0; }
+    .meeting-log-bar p { margin: 2px 0 0; color: #71828c; font-size: 10px; }
+    .meeting-log-state { color: #526873; font-size: 10px; font-weight: 750; text-align: right; }
+    .meeting-log-body-scroll { overflow-x: auto; }
+    .meeting-log-grid { display: grid; grid-template-columns: minmax(190px,2fr) minmax(375px,5fr) minmax(375px,5fr); min-width: 1040px; height: 680px; }
+    .log-date-pane, .log-editor-pane, .log-preview-pane, .log-compose-pane, .log-output-pane { min-width: 0; min-height: 0; }
+    .log-date-pane { display: flex; flex-direction: column; border-right: 1px solid #d8e0e5; background: #fbfcfd; }
+    .log-pane-head, .log-editor-head, .log-preview-head, .log-compose-head, .log-output-head { min-height: 57px; padding: 10px 13px; border-bottom: 1px solid #d8e0e5; }
+    .log-pane-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .log-pane-title { color: #18394f; font-size: 12px; font-weight: 900; }
+    .log-pane-subtitle { display: block; margin-top: 2px; color: #778790; font-size: 9px; font-weight: 650; }
+    .log-pane-actions { display: flex; align-items: center; gap: 8px; }
+    .log-compact-button { min-height: 28px; padding: 0 9px; border: 1px solid #b9c8d0; border-radius: 5px; background: #fff; color: #1f526d; cursor: pointer; font-size: 10px; font-weight: 850; }
+    .log-compact-button:hover, .log-compact-button[aria-pressed="true"] { background: #e7f5f6; border-color: #58aeb3; color: #087f86; }
+    .log-filter { position: relative; padding: 9px 12px; border-bottom: 1px solid #e2e8ec; }
+    .log-filter label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .log-filter input { width: 100%; height: 31px; padding: 0 9px 0 28px; border: 1px solid #c8d3da; border-radius: 5px; background: #fff; color: #334850; font-size: 10px; }
+    .log-filter::before { content: "⌕"; position: absolute; z-index: 1; left: 21px; top: 13px; color: #7a8c96; font-size: 16px; line-height: 22px; }
+    .log-date-list { flex: 1; overflow-y: auto; scrollbar-color: #aebdc5 transparent; }
+    .log-month-label { position: sticky; z-index: 2; top: 0; padding: 9px 13px 5px; background: rgba(251,252,253,.96); color: #354b57; font-size: 10px; font-weight: 900; backdrop-filter: blur(5px); }
+    .log-date-button { width: 100%; height: 27px; display: grid; grid-template-columns: 13px minmax(0,1fr) auto auto; align-items: center; gap: 7px; padding: 0 11px 0 14px; border: 0; background: transparent; color: #3f515b; cursor: pointer; text-align: left; font-size: 10px; }
+    .log-date-button:hover { background: #edf4f6; }
+    .log-date-button[aria-pressed="true"] { background: #def3f4; color: #087b82; font-weight: 850; }
+    .log-date-dot { width: 6px; height: 6px; border: 1px solid #9babb4; border-radius: 50%; background: #fff; }
+    .log-date-button.has-note .log-date-dot { border-color: #128e94; background: #128e94; }
+    .log-date-check { width: 16px; height: 16px; display: grid; place-items: center; border: 1px solid transparent; border-radius: 50%; color: transparent; font-size: 10px; }
+    .log-date-button[aria-pressed="true"] .log-date-check { border-color: #0d969c; background: #0d969c; color: #fff; }
+    .log-date-line-count { min-width: 28px; color: #82919a; font-size: 8px; font-weight: 750; text-align: right; white-space: nowrap; }
+    .log-date-button[aria-pressed="true"] .log-date-line-count { color: #087b82; }
+    .log-date-foot { padding: 8px 12px; border-top: 1px solid #d8e0e5; background: #f7fafb; }
+    .log-show-earlier { width: 100%; border: 0; background: transparent; color: #526d7c; cursor: pointer; font-size: 9px; font-weight: 800; }
+    .log-show-earlier:hover { color: #087f86; }
+
+    .log-editor-pane, .log-compose-pane { border-right: 1px solid #d8e0e5; }
+    .log-editor-pane { display: flex; flex-direction: column; }
+    .log-editor-head, .log-preview-head, .log-compose-head, .log-output-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .log-editor-title, .log-preview-title, .log-compose-title, .log-output-title { color: #152c3d; font-size: 12px; font-weight: 900; }
+    .log-meta { color: #75858e; font-size: 9px; font-weight: 700; white-space: nowrap; }
+    .log-editor-toolbar { min-height: 38px; display: flex; align-items: center; flex-wrap: wrap; gap: 3px; padding: 5px 10px; border-bottom: 1px solid #e1e7eb; background: #fafcfc; }
+    .log-tool { min-height: 26px; padding: 0 8px; border: 0; border-right: 1px solid #dbe3e7; background: transparent; color: #435b67; cursor: pointer; font-size: 10px; font-weight: 800; }
+    .log-tool:last-child { border-right: 0; }
+    .log-tool:hover { background: #eaf4f5; color: #087f86; }
+    .log-template-control { min-width: 180px; display: flex; align-items: center; gap: 5px; margin-left: auto; }
+    .log-template-control label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .log-template-select { min-width: 0; flex: 1; height: 27px; padding: 0 6px; border: 1px solid #c5d1d7; border-radius: 5px; background: #fff; color: #38505c; font-size: 9px; font-weight: 700; }
+    .log-template-actions { display: inline-flex; overflow: hidden; border: 1px solid #c5d1d7; border-radius: 5px; background: #fff; }
+    .log-template-actions button { width: 28px; height: 25px; padding: 0; border: 0; border-right: 1px solid #d7e0e4; background: #fff; color: #37515f; cursor: pointer; font-size: 13px; line-height: 1; }
+    .log-template-actions button:first-child { width: 47px; font-size: 9px; font-weight: 850; }
+    .log-template-actions button:last-child { border-right: 0; }
+    .log-template-actions button:hover:not(:disabled) { background: #eaf5f5; color: #087f86; }
+    .log-template-actions button:disabled { color: #a6b2b8; cursor: not-allowed; }
+    .log-editor { flex: 1; width: 100%; min-height: 0; padding: 16px 17px; border: 0; border-radius: 0; resize: none; background: #fff; color: #1d2c35; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 11px; line-height: 1.55; outline: 0; }
+    .log-editor:focus { box-shadow: inset 0 0 0 2px rgba(13,150,156,.16); }
+    .log-editor-status { min-height: 30px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; border-top: 1px solid #e1e7eb; color: #778790; font-size: 9px; }
+    .log-saved::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: #2ea66e; }
+
+    .log-preview-pane, .log-output-pane { display: flex; flex-direction: column; background: #fff; }
+    .log-preview-inner { flex: 1; display: grid; grid-template-columns: 112px minmax(0,1fr); min-height: 0; }
+    .log-preview-toc { overflow-y: auto; padding: 14px 9px; border-right: 1px solid #e0e7eb; background: #fbfcfd; }
+    .log-preview-toc strong { display: block; margin-bottom: 9px; color: #425761; font-size: 9px; }
+    .log-preview-toc a { display: block; padding: 4px 0; color: #12858b; font-size: 9px; line-height: 1.25; text-decoration: none; }
+    .log-preview-toc a:hover { text-decoration: underline; }
+    .log-preview-toc .toc-depth-2 { padding-left: 8px; }
+    .log-preview-toc .toc-depth-3 { padding-left: 16px; }
+    .log-markdown { overflow-y: auto; padding: 14px 17px 40px; color: #273841; font-size: 10px; line-height: 1.55; }
+    .log-markdown h1, .log-markdown h2, .log-markdown h3, .log-markdown h4 { margin: 0 0 7px; color: #172d3c; font-family: inherit; font-weight: 900; letter-spacing: -.01em; }
+    .log-markdown h1 { font-size: 17px; }
+    .log-markdown h2 { margin-top: 18px; padding-top: 14px; border-top: 1px solid #d8e0e5; font-size: 14px; }
+    .log-markdown h3 { margin-top: 13px; font-size: 12px; }
+    .log-markdown h4 { margin-top: 11px; font-size: 11px; }
+    .log-markdown p { margin: 0 0 10px; }
+    .log-markdown ul, .log-markdown ol { margin: 4px 0 11px; padding-left: 21px; }
+    .log-markdown li { margin: 2px 0; }
+    .log-markdown code { padding: 1px 4px; border-radius: 3px; background: #edf2f4; color: #18465f; font-family: "SFMono-Regular", Consolas, monospace; }
+    .log-markdown blockquote { margin: 8px 0; padding: 4px 0 4px 10px; border-left: 3px solid #8fc8cb; color: #536872; }
+    .log-markdown hr { margin: 15px 0; border: 0; border-top: 1px solid #d8e0e5; }
+    .log-markdown input[type="checkbox"] { width: 12px; height: 12px; margin: 0 6px 0 0; accent-color: #0c979d; vertical-align: -2px; }
+    .log-empty-preview { padding: 44px 16px; color: #7a8b94; text-align: center; }
+    .log-empty-preview strong { display: block; margin-bottom: 5px; color: #3f555f; font-size: 12px; }
+
+    .log-compose-pane { overflow-y: auto; background: #fbfcfd; }
+    .log-compose-head { position: sticky; z-index: 3; top: 0; background: rgba(251,252,253,.97); }
+    .log-compose-section { padding: 14px 16px; border-bottom: 1px solid #d8e0e5; }
+    .log-compose-section h4 { margin: 0 0 10px; color: #263f4c; font-size: 10px; font-weight: 900; }
+    .log-mode-option { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: start; margin: 0; padding: 7px 0; cursor: pointer; }
+    .log-mode-option input { width: 14px; height: 14px; margin: 1px 0 0; accent-color: #0c979d; }
+    .log-mode-option strong { display: block; color: #263b47; font-size: 10px; }
+    .log-mode-option small { display: block; margin-top: 2px; color: #75858e; font-size: 9px; font-weight: 500; }
+    .log-heading-list { display: grid; gap: 2px; max-height: 215px; overflow-y: auto; }
+    .log-heading-option { display: grid; grid-template-columns: 15px 1fr auto; gap: 8px; align-items: center; min-height: 25px; margin: 0; color: #314652; font-size: 10px; font-weight: 750; }
+    .log-heading-option input, .log-option input { width: 14px; height: 14px; margin: 0; accent-color: #0c979d; }
+    .log-heading-option span:last-child { color: #819099; font-size: 9px; font-weight: 650; }
+    .log-heading-empty { padding: 10px 0; color: #7a8b94; font-size: 9px; line-height: 1.5; }
+    .log-option { display: flex; align-items: center; gap: 8px; min-height: 27px; margin: 0; color: #334955; font-size: 10px; font-weight: 750; }
+    .log-generate { width: 100%; min-height: 37px; margin-top: 11px; border: 0; border-radius: 5px; background: #0b9298; color: #fff; cursor: pointer; font-size: 11px; font-weight: 900; box-shadow: 0 6px 15px rgba(11,146,152,.18); }
+    .log-generate:hover { background: #077e84; }
+    .log-output-pane { min-width: 0; }
+    .log-output-scroll { flex: 1; overflow-y: auto; padding: 14px 15px 34px; }
+    .log-output-toc { margin-bottom: 17px; padding-bottom: 14px; border-bottom: 1px solid #cfdade; }
+    .log-output-toc h3 { margin: 0 0 9px; color: #203b4b; font-size: 11px; }
+    .log-output-toc a { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 6px; padding: 3px 0; color: #0d858b; font-size: 9px; text-decoration: none; }
+    .log-output-toc a::after { content: ""; grid-column: 2; grid-row: 1; margin-bottom: 3px; border-bottom: 1px dotted #91a5ae; }
+    .log-output-toc a span:last-child { grid-column: 3; }
+    .log-output-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 9px 12px; border-top: 1px solid #d8e0e5; background: #fafcfc; }
+    .log-output-actions button { min-height: 32px; border: 1px solid #c5d1d7; border-radius: 5px; background: #fff; color: #2b4c5e; cursor: pointer; font-size: 10px; font-weight: 850; }
+    .log-output-actions button:hover { border-color: #72afb3; background: #edf7f7; color: #087f86; }
+    .log-no-selection { display: grid; place-items: center; height: 100%; padding: 30px; color: #74858e; text-align: center; }
+    .log-no-selection strong { display: block; margin-bottom: 5px; color: #3c525d; font-size: 13px; }
+    .meeting-hidden { display: none !important; }
+
     .groups-chart { min-width: 860px; width: calc(var(--label-width) + var(--timeline-width, 900px)); }
     .groups-chart .timeline-head, .group-heading, .group-task { display: grid; grid-template-columns: var(--label-width) var(--timeline-width, 900px); }
     .group-heading { min-height: 31px; border-bottom: 1px solid #aebfca; background: #edf4f8; }
@@ -339,12 +455,11 @@
       .cal-row-label { width: 122px; padding-left: 7px; font-size: 9px; }
       .month-day { min-height: 82px; padding: 4px; }
       .calendar-event { padding: 2px 4px; font-size: 8px; }
-      .month-calendar-head { grid-template-areas: "title title" "left right"; grid-template-columns: auto 1fr; gap: 8px; padding: 8px; }
+      .month-calendar-head { grid-template-areas: "title" "controls"; grid-template-columns: 1fr; gap: 8px; padding: 8px; }
       .month-calendar-title { grid-area: title; }
-      .calendar-toolbar-side:first-child { grid-area: left; }
-      .calendar-toolbar-side:last-child { grid-area: right; }
-      .calendar-view-button { padding: 6px 5px; font-size: 9px; }
-      .month-nav { padding: 7px 8px; }
+      .calendar-toolbar-spacer { display: none; }
+      .calendar-toolbar-side:last-child { grid-area: controls; justify-content: flex-end; flex-wrap: wrap; }
+      .calendar-nav-button, .calendar-view-button { padding: 6px 5px; font-size: 9px; }
     }
 
     @media print {
@@ -407,7 +522,13 @@
           </div>
           <div class="field-row">
             <label for="items">Timeline items</label>
-            <span class="line-count" id="line-count">0 items</span>
+            <div class="timeline-editor-actions">
+              <div class="timeline-indent-actions" role="group" aria-label="Timeline indentation">
+                <button id="indent-timeline" type="button" title="Indent selected lines">Indent</button>
+                <button id="unindent-timeline" type="button" title="Unindent selected lines">Unindent</button>
+              </div>
+              <span class="line-count" id="line-count">0 items</span>
+            </div>
           </div>
           <div class="syntax-editor">
             <pre class="syntax-highlight" id="syntax-highlight" aria-hidden="true"></pre>
@@ -430,6 +551,112 @@
         <div class="today-summary" id="today-summary"></div>
         <div class="today-scroll"><div class="today-table" id="today-table"></div></div>
       </div>
+
+      <section class="meeting-log-shell" aria-labelledby="meeting-log-title">
+        <header class="meeting-log-bar">
+          <div>
+            <h2 id="meeting-log-title">Meeting logs</h2>
+            <p>Write one day at a time, or select several days to compose a summary.</p>
+          </div>
+          <div class="meeting-log-state" id="meeting-log-state" aria-live="polite">Today’s log</div>
+        </header>
+        <div class="meeting-log-body-scroll">
+          <div class="meeting-log-grid">
+            <aside class="log-date-pane" aria-label="Meeting log dates">
+              <div class="log-pane-head">
+                <div>
+                  <span class="log-pane-title">Days</span>
+                  <span class="log-pane-subtitle">Click to edit · Select days to combine</span>
+                </div>
+                <div class="log-pane-actions"><button class="log-compact-button" id="log-multi-select" type="button" aria-pressed="false">Select days</button></div>
+              </div>
+              <div class="log-filter">
+                <label for="log-date-filter">Filter meeting days</label>
+                <input id="log-date-filter" type="search" placeholder="Filter days…" autocomplete="off">
+              </div>
+              <div class="log-date-list" id="log-date-list"></div>
+              <div class="log-date-foot"><button class="log-show-earlier" id="log-show-earlier" type="button">Show 30 earlier days</button></div>
+            </aside>
+
+            <section class="log-editor-pane" id="log-editor-pane" aria-label="Meeting log editor">
+              <header class="log-editor-head">
+                <div>
+                  <div class="log-editor-title" id="log-editor-title">Today’s log</div>
+                  <div class="log-meta" id="log-editor-date"></div>
+                </div>
+                <span class="log-meta" id="log-editor-words">0 words</span>
+              </header>
+              <div class="log-editor-toolbar" role="toolbar" aria-label="Markdown shortcuts">
+                <button class="log-tool" type="button" data-log-insert="heading">Heading</button>
+                <button class="log-tool" type="button" data-log-insert="bullet">Bullet</button>
+                <button class="log-tool" type="button" data-log-insert="task">Task</button>
+                <div class="log-template-control">
+                  <label for="log-template-select">Meeting template</label>
+                  <select class="log-template-select" id="log-template-select" aria-label="Meeting template"></select>
+                  <div class="log-template-actions" role="group" aria-label="Meeting template actions">
+                    <button id="log-save-template" type="button" title="Save this log as a new template">Save as</button>
+                    <button id="log-delete-template" type="button" title="Delete selected template" aria-label="Delete selected template">🗑</button>
+                  </div>
+                </div>
+              </div>
+              <textarea class="log-editor" id="log-editor" spellcheck="true" placeholder="# Agenda&#10;&#10;- What are we working on?&#10;&#10;# Went Well&#10;&#10;- Add a note…"></textarea>
+              <footer class="log-editor-status"><span class="log-saved" id="log-save-state">Saved on this device</span><span>Markdown</span></footer>
+            </section>
+
+            <section class="log-preview-pane" id="log-preview-pane" aria-label="Live meeting log preview">
+              <header class="log-preview-head">
+                <div class="log-preview-title">Live preview</div>
+                <span class="log-meta" id="log-preview-words">0 words</span>
+              </header>
+              <div class="log-preview-inner">
+                <nav class="log-preview-toc" id="log-preview-toc" aria-label="Log table of contents"></nav>
+                <article class="log-markdown" id="log-preview-content"></article>
+              </div>
+            </section>
+
+            <section class="log-compose-pane meeting-hidden" id="log-compose-pane" aria-label="Compose meeting log summary">
+              <header class="log-compose-head">
+                <div>
+                  <div class="log-compose-title">Compose summary</div>
+                  <div class="log-meta" id="log-compose-count">0 dates selected</div>
+                </div>
+              </header>
+              <div class="log-compose-section">
+                <h4>1. Choose summary mode</h4>
+                <label class="log-mode-option"><input type="radio" name="log-summary-mode" value="concatenate"><span><strong>Concatenate logs</strong><small>Append full log contents in chronological order</small></span></label>
+                <label class="log-mode-option"><input type="radio" name="log-summary-mode" value="extract" checked><span><strong>Extract bullets under chosen headings</strong><small>Collect bullets and checkboxes from matching sections</small></span></label>
+                <label class="log-mode-option"><input type="radio" name="log-summary-mode" value="hybrid"><span><strong>Build a hybrid summary</strong><small>Collated sections followed by the complete daily logs</small></span></label>
+              </div>
+              <div class="log-compose-section" id="log-heading-section">
+                <h4>2. Choose headings to collect</h4>
+                <div class="log-heading-list" id="log-heading-list"></div>
+              </div>
+              <div class="log-compose-section">
+                <h4>3. Summary options</h4>
+                <label class="log-option"><input id="log-include-toc" type="checkbox" checked>Include table of contents</label>
+                <label class="log-option"><input id="log-group-headings" type="checkbox" checked>Group collected items by heading</label>
+                <label class="log-option"><input id="log-include-checkboxes" type="checkbox" checked>Include checkbox items</label>
+                <button class="log-generate" id="log-generate" type="button">Generate summary</button>
+              </div>
+            </section>
+
+            <section class="log-output-pane meeting-hidden" id="log-output-pane" aria-label="Meeting log summary output">
+              <header class="log-output-head">
+                <div class="log-output-title">Summary output <span class="log-meta">(Preview)</span></div>
+                <span class="log-meta" id="log-output-words">0 words</span>
+              </header>
+              <div class="log-output-scroll" id="log-output-scroll">
+                <nav class="log-output-toc" id="log-output-toc" aria-label="Summary table of contents"></nav>
+                <article class="log-markdown" id="log-output-content"></article>
+              </div>
+              <footer class="log-output-actions">
+                <button id="log-copy-summary" type="button">Copy markdown</button>
+                <button id="log-export-summary" type="button">Export markdown</button>
+              </footer>
+            </section>
+          </div>
+        </div>
+      </section>
     </section>
 
     <section class="panel" id="display-panel" role="tabpanel" aria-labelledby="display-tab">
@@ -455,21 +682,22 @@
     <section class="panel" id="calendar-panel" role="tabpanel" aria-labelledby="calendar-tab">
       <div class="calendar-shell">
         <div class="month-calendar-head">
-          <div class="calendar-toolbar-side">
-            <button class="month-nav" id="calendar-prev" type="button" aria-label="Previous calendar period">Previous</button>
-            <button class="month-nav" id="calendar-today" type="button">Today</button>
-          </div>
+          <div class="calendar-toolbar-spacer" aria-hidden="true"></div>
           <div class="month-calendar-title">
             <h2 id="calendar-month-title"></h2>
             <div class="month-calendar-summary" id="calendar-summary" aria-live="polite"></div>
           </div>
           <div class="calendar-toolbar-side">
+            <div class="calendar-nav-switch" role="group" aria-label="Calendar navigation">
+              <button class="calendar-nav-button" id="calendar-prev" type="button" aria-label="Previous calendar period">Previous</button>
+              <button class="calendar-nav-button" id="calendar-today" type="button">Today</button>
+              <button class="calendar-nav-button" id="calendar-next" type="button" aria-label="Next calendar period">Next</button>
+            </div>
             <div class="calendar-view-switch" role="group" aria-label="Calendar view">
               <button class="calendar-view-button" type="button" data-calendar-view="month" aria-pressed="true">Month</button>
               <button class="calendar-view-button" type="button" data-calendar-view="7">7 days</button>
               <button class="calendar-view-button" type="button" data-calendar-view="4">4 days</button>
             </div>
-            <button class="month-nav" id="calendar-next" type="button" aria-label="Next calendar period">Next</button>
           </div>
         </div>
         <div class="month-calendar-weekdays" id="calendar-weekdays" aria-hidden="true"></div>
@@ -506,6 +734,7 @@
       let calendarViewDate = null;
       let calendarViewMode = 'month';
       let showEmptyPastMonths = false;
+      let savedUiState = {activeView:'edit', calendarViewMode:'month', selectedSchedulesByPlan:{}};
       let savedPlans = [];
       let activePlanId = 'default-example';
       const DEFAULT_ITEMS = `@timezone=America/New_York
@@ -557,9 +786,47 @@ Oct 3-16: Taper and recovery period #64748b
 Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       const PLAN_STORAGE_KEY = 'caltasklog-saved-plans';
       const LEGACY_STORAGE_KEY = 'planline-data';
+      const UI_STATE_STORAGE_KEY = 'caltasklog-ui-state-v1';
+      const MEETING_LOG_STORAGE_KEY = 'caltasklog-meeting-logs-v1';
+      const MEETING_TEMPLATE_STORAGE_KEY = 'caltasklog-meeting-templates-v1';
+      const DEFAULT_MEETING_TEMPLATE = `# Agenda
+
+-\u0020
+
+# Went Well
+
+-\u0020
+
+# Could Go Better
+
+-\u0020
+
+# Lessons Learned
+
+-\u0020
+
+# Risks
+
+-\u0020
+
+# Action Items
+
+- [ ]\u0020`;
+      let meetingLogs = {};
+      let meetingTemplates = [];
+      let activeMeetingTemplateId = '';
+      let selectedLogDates = new Set();
+      let logReferenceDate = null;
+      let logHistoryDays = 90;
+      let logMultiSelect = false;
+      let logSummaryMode = 'extract';
+      let selectedLogHeadingKeys = new Set();
+      let logHeadingSelectionSignature = '';
+      let latestSummaryMarkdown = '';
 
       const els = {
         items: document.querySelector('#items'), highlight: document.querySelector('#syntax-highlight'), count: document.querySelector('#line-count'),
+        indentTimeline: document.querySelector('#indent-timeline'), unindentTimeline: document.querySelector('#unindent-timeline'),
         planSelect: document.querySelector('#plan-select'), savePlan: document.querySelector('#save-plan'), deletePlan: document.querySelector('#delete-plan'), downloadPlan: document.querySelector('#download-plan'), planNote: document.querySelector('#plan-note'),
         errors: document.querySelector('#errors'), warnings: document.querySelector('#warnings'), summary: document.querySelector('#summary'),
         chart: document.querySelector('#chart'), save: document.querySelector('#save-status'),
@@ -567,6 +834,10 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         monthCalendarGrid: document.querySelector('#calendar-grid'), monthCalendarWeekdays: document.querySelector('#calendar-weekdays'), monthCalendarSummary: document.querySelector('#calendar-summary'), monthCalendarTitle: document.querySelector('#calendar-month-title'), calendarPrev: document.querySelector('#calendar-prev'), calendarToday: document.querySelector('#calendar-today'), calendarNext: document.querySelector('#calendar-next'), calendarViewButtons: [...document.querySelectorAll('[data-calendar-view]')],
         tasksTable: document.querySelector('#tasks-table'), tasksSummary: document.querySelector('#tasks-summary'),
         todayTable: document.querySelector('#today-table'), todaySummary: document.querySelector('#today-summary'),
+        meetingLogState: document.querySelector('#meeting-log-state'), logMultiSelect: document.querySelector('#log-multi-select'), logDateFilter: document.querySelector('#log-date-filter'), logDateList: document.querySelector('#log-date-list'), logShowEarlier: document.querySelector('#log-show-earlier'),
+        logEditorPane: document.querySelector('#log-editor-pane'), logEditorTitle: document.querySelector('#log-editor-title'), logEditorDate: document.querySelector('#log-editor-date'), logEditorWords: document.querySelector('#log-editor-words'), logEditor: document.querySelector('#log-editor'), logSaveState: document.querySelector('#log-save-state'), logTemplateSelect: document.querySelector('#log-template-select'), logSaveTemplate: document.querySelector('#log-save-template'), logDeleteTemplate: document.querySelector('#log-delete-template'), logPreviewPane: document.querySelector('#log-preview-pane'), logPreviewWords: document.querySelector('#log-preview-words'), logPreviewToc: document.querySelector('#log-preview-toc'), logPreviewContent: document.querySelector('#log-preview-content'),
+        logComposePane: document.querySelector('#log-compose-pane'), logComposeCount: document.querySelector('#log-compose-count'), logHeadingSection: document.querySelector('#log-heading-section'), logHeadingList: document.querySelector('#log-heading-list'), logIncludeToc: document.querySelector('#log-include-toc'), logGroupHeadings: document.querySelector('#log-group-headings'), logIncludeCheckboxes: document.querySelector('#log-include-checkboxes'), logGenerate: document.querySelector('#log-generate'),
+        logOutputPane: document.querySelector('#log-output-pane'), logOutputWords: document.querySelector('#log-output-words'), logOutputToc: document.querySelector('#log-output-toc'), logOutputContent: document.querySelector('#log-output-content'), logCopySummary: document.querySelector('#log-copy-summary'), logExportSummary: document.querySelector('#log-export-summary'),
         groupsChart: document.querySelector('#groups-chart'), groupsSummary: document.querySelector('#groups-summary'),
         pastMonthControl: document.querySelector('#past-month-control'), showEmptyPastMonths: document.querySelector('#show-empty-past-months'),
         schedulePicker: document.querySelector('#schedule-picker'), scheduleMenu: document.querySelector('#schedule-menu'), schedulePickerLabel: document.querySelector('#schedule-picker-label'),
@@ -624,11 +895,63 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.highlight.scrollTop = els.items.scrollTop;
         els.highlight.scrollLeft = els.items.scrollLeft;
       }
+      function adjustTimelineIndent(direction) {
+        const editor = els.items;
+        if (editor.readOnly) return;
+        const value = editor.value;
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const blockStart = value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+        const effectiveEnd = end > blockStart && value[end - 1] === '\n' ? end - 1 : end;
+        const nextBreak = value.indexOf('\n', effectiveEnd);
+        const blockEnd = nextBreak === -1 ? value.length : nextBreak;
+        const block = value.slice(blockStart, blockEnd);
+        const adjusted = block.split('\n').map(line => {
+          if (direction === 'indent') return `    ${line}`;
+          return line.startsWith('\t') ? line.slice(1) : line.replace(/^ {1,4}/, '');
+        }).join('\n');
+        editor.setRangeText(adjusted, blockStart, blockEnd, 'select');
+        editor.dispatchEvent(new Event('input', {bubbles:true}));
+        editor.focus();
+      }
 
       function defaultPlan() { return {id:'default-example', name:'Default example', items:DEFAULT_ITEMS, readOnly:true}; }
       function makePlanId() { return `plan-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; }
       function activePlan() { return savedPlans.find(plan => plan.id === activePlanId) || savedPlans[0]; }
       function normalizePlanName(value) { return value.trim().replace(/\s+/g, ' '); }
+      function loadUiState() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(UI_STATE_STORAGE_KEY) || 'null');
+          const validViews = new Set(['edit','today','gantt','timeline','calendar','groups','tasks']);
+          const selectedSchedulesByPlan = stored?.selectedSchedulesByPlan && typeof stored.selectedSchedulesByPlan === 'object'
+            ? Object.fromEntries(Object.entries(stored.selectedSchedulesByPlan).filter(([,ids]) => Array.isArray(ids)).map(([planId,ids]) => [planId, ids.filter(id => typeof id === 'string')]))
+            : {};
+          savedUiState = {
+            activeView:validViews.has(stored?.activeView) ? stored.activeView : 'edit',
+            calendarViewMode:['month','7','4'].includes(stored?.calendarViewMode) ? stored.calendarViewMode : 'month',
+            selectedSchedulesByPlan
+          };
+        } catch (_) {
+          savedUiState = {activeView:'edit', calendarViewMode:'month', selectedSchedulesByPlan:{}};
+        }
+        calendarViewMode = savedUiState.calendarViewMode;
+      }
+      function persistUiState() {
+        try {
+          localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(savedUiState));
+        } catch (_) { /* Storage can be unavailable in strict private modes. */ }
+      }
+      function restoreScheduleSelection(planId) {
+        const ids = savedUiState.selectedSchedulesByPlan?.[planId];
+        return Array.isArray(ids) ? new Set(ids) : null;
+      }
+      function persistScheduleSelection() {
+        const plan = activePlan();
+        if (!plan) return;
+        if (selectedScheduleIds === null) delete savedUiState.selectedSchedulesByPlan[plan.id];
+        else savedUiState.selectedSchedulesByPlan[plan.id] = [...selectedScheduleIds];
+        persistUiState();
+      }
       function uniquePlanName(base) {
         const names = new Set(savedPlans.map(plan => plan.name.toLocaleLowerCase()));
         if (!names.has(base.toLocaleLowerCase())) return base;
@@ -648,6 +971,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.planSelect.innerHTML = savedPlans.map(entry => `<option value="${esc(entry.id)}"${entry.id === plan.id ? ' selected' : ''}>${esc(entry.name)}${entry.readOnly ? ' — read only' : ''}</option>`).join('');
         els.items.readOnly = Boolean(plan.readOnly);
         els.items.setAttribute('aria-readonly', String(Boolean(plan.readOnly)));
+        els.indentTimeline.disabled = Boolean(plan.readOnly);
+        els.unindentTimeline.disabled = Boolean(plan.readOnly);
         els.deletePlan.disabled = Boolean(plan.readOnly);
         els.planNote.textContent = plan.readOnly ? 'This built-in example is protected. Use Save as to make an editable copy.' : 'Changes to this entry save automatically on this device.';
         els.save.textContent = plan.readOnly ? 'Default example is read only' : 'Saved on this device';
@@ -659,7 +984,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         clearTimeout(validationTimer);
         activePlanId = plan.id;
         els.items.value = plan.items;
-        selectedScheduleIds = null;
+        selectedScheduleIds = restoreScheduleSelection(plan.id);
         updateCount();
         updateHighlight();
         renderPlanControls();
@@ -670,6 +995,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         persistPlans();
       }
       function load() {
+        loadUiState();
         const builtIn = defaultPlan();
         try {
           const stored = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || 'null');
@@ -838,14 +1164,26 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
 
       function extractTimeRange(value) {
-        const match = value.match(/^(.*?\b\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+(\d{1,2}(?::\d{2})?\s*[ap]?m?)\s*-\s*(\d{1,2}(?::\d{2})?\s*[ap]?m?)$/i);
-        if (!match || !/[:ap]/i.test(`${match[2]}${match[3]}`)) return {dateText:value.trim(), startTime:null, endTime:null};
-        const startClock = parseClockToken(match[2]), endClock = parseClockToken(match[3]);
-        let startTime = clockMinutes(startClock, endClock.meridiem), endTime = clockMinutes(endClock, startClock.meridiem);
-        if (!startClock.meridiem && endClock.meridiem && startTime >= endTime && startTime >= 12 * 60) startTime -= 12 * 60;
-        if (!endClock.meridiem && startClock.meridiem && endTime <= startTime && endTime + 12 * 60 < 24 * 60) endTime += 12 * 60;
-        if (endTime <= startTime) throw new Error('End time must come after start time');
-        return {dateText:match[1].trim(), startTime, endTime};
+        const range = value.match(/^(.*?\b\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+(\d{1,2}(?::\d{2})?\s*[ap]?m?)\s*-\s*(\d{1,2}(?::\d{2})?\s*[ap]?m?)$/i);
+        if (range && /[:ap]/i.test(`${range[2]}${range[3]}`)) {
+          const startClock = parseClockToken(range[2]), endClock = parseClockToken(range[3]);
+          let startTime = clockMinutes(startClock, endClock.meridiem), endTime = clockMinutes(endClock, startClock.meridiem);
+          if (!startClock.meridiem && endClock.meridiem && startTime >= endTime && startTime >= 12 * 60) startTime -= 12 * 60;
+          if (!endClock.meridiem && startClock.meridiem && endTime <= startTime && endTime + 12 * 60 < 24 * 60) endTime += 12 * 60;
+          if (endTime <= startTime) throw new Error('End time must come after start time');
+          return {dateText:range[1].trim(), startTime, endTime};
+        }
+        const single = value.match(/^(.*?\b\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)\s+(\d{1,2}(?::\d{2})?\s*[ap]?m?)$/i);
+        if (!single || !/[:ap]/i.test(single[2])) return {dateText:value.trim(), startTime:null, endTime:null};
+        return {dateText:single[1].trim(), startTime:clockMinutes(parseClockToken(single[2])), endTime:null};
+      }
+
+      function calendarTimeLabel(minutes) {
+        if (minutes === null || minutes === undefined) return '';
+        const hour24 = Math.floor(minutes / 60);
+        const minute = minutes % 60;
+        const hour12 = hour24 % 12 || 12;
+        return `${hour12}:${String(minute).padStart(2, '0')}${hour24 < 12 ? 'am' : 'pm'}`;
       }
 
       function parseRRule(text) {
@@ -1492,12 +1830,14 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
           const eventBars = segments.map(({task,startColumn,endColumn,lane}) => {
             const single = sameDay(task.start, task.end);
             const displayName = planningName(task);
-            const tooltip = `${displayName}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
+            const timeLabel = calendarTimeLabel(task.startTime);
+            const calendarLabel = `${displayName}${timeLabel ? `@${timeLabel}` : ''}`;
+            const tooltip = `${calendarLabel}: ${pretty(task.start)}${single ? '' : ` to ${pretty(task.end)}`}`;
             const tag = task.link ? 'a' : 'span';
             const link = task.link ? ` href="${esc(task.link)}" target="_blank" rel="noopener noreferrer"` : '';
             const depthMarker = task.depth ? `${'↳ '.repeat(Math.min(task.depth, 3))}` : '';
             const classes = `calendar-event${task.hasChildren ? ' parent-event' : ''}${task.start < rowStart ? ' continues-before' : ''}${task.end > rowEnd ? ' continues-after' : ''}${eventClassNames(task, today)}`;
-            return `<${tag} class="${classes}"${link} title="${esc(tooltip)}" style="--event-column:${startColumn};--event-span:${endColumn - startColumn + 1};--event-top:${34 + lane * 22}px;--event-color:${esc(task.color)};--event-text:${calendarTextColor(task.color)}">${depthMarker}${esc(displayName)}</${tag}>`;
+            return `<${tag} class="${classes}"${link} title="${esc(tooltip)}" style="--event-column:${startColumn};--event-span:${endColumn - startColumn + 1};--event-top:${34 + lane * 22}px;--event-color:${esc(task.color)};--event-text:${calendarTextColor(task.color)}">${depthMarker}${esc(calendarLabel)}</${tag}>`;
           }).join('');
           return `<section class="calendar-week" style="--calendar-columns:${columns};--calendar-row-height:${rowHeight}px"><div class="calendar-week-days">${dayCells}</div>${eventBars}</section>`;
         }).join('');
@@ -1636,6 +1976,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.todayTable.setAttribute('role','table');
         els.todayTable.setAttribute('aria-label','Tasks to work on today');
         els.todayTable.innerHTML = matches.length ? taskTableHeader() + laneHtml : `<div class="today-empty"><strong>Nothing needs attention today.</strong>No active or overdue unfinished tasks.</div>`;
+        renderMeetingLogWorkspace(today);
         return true;
       }
 
@@ -1662,6 +2003,439 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.tasksTable.setAttribute('aria-label', 'Project tasks');
         els.tasksTable.innerHTML = taskTableHeader() + rows;
         return true;
+      }
+
+      function meetingDateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      function meetingDateFromKey(key) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+        if (!match) return null;
+        const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
+
+      function meetingDateLabel(key, long = true) {
+        const date = meetingDateFromKey(key);
+        if (!date) return key;
+        return date.toLocaleDateString('en-US', long
+          ? {weekday:'long', month:'long', day:'numeric', year:'numeric'}
+          : {month:'short', day:'numeric', year:'numeric'});
+      }
+
+      function markdownWordCount(value = '') {
+        const words = value.replace(/[#>*_`\[\]()-]/g, ' ').trim().match(/\b[\w’'-]+\b/g);
+        return words ? words.length : 0;
+      }
+
+      function meetingLineCount(value = '') {
+        return String(value).split(/\r?\n/).filter(line => line.trim()).length;
+      }
+
+      function loadMeetingLogs(referenceDate) {
+        try {
+          const saved = JSON.parse(localStorage.getItem(MEETING_LOG_STORAGE_KEY) || '{}');
+          meetingLogs = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+        } catch (_) {
+          meetingLogs = {};
+        }
+        logReferenceDate = new Date(referenceDate);
+        selectedLogDates = new Set([meetingDateKey(logReferenceDate)]);
+      }
+
+      function saveMeetingLogs() {
+        localStorage.setItem(MEETING_LOG_STORAGE_KEY, JSON.stringify(meetingLogs));
+      }
+
+      function loadMeetingTemplates() {
+        try {
+          const raw = localStorage.getItem(MEETING_TEMPLATE_STORAGE_KEY);
+          if (raw === null) {
+            meetingTemplates = [{id:'robot-meeting', name:'Robot meeting', content:DEFAULT_MEETING_TEMPLATE}];
+            activeMeetingTemplateId = '';
+            return;
+          }
+          const saved = JSON.parse(raw);
+          meetingTemplates = Array.isArray(saved) ? saved.filter(template => template && typeof template.id === 'string' && typeof template.name === 'string' && typeof template.content === 'string') : [];
+          activeMeetingTemplateId = '';
+        } catch (_) {
+          meetingTemplates = [{id:'robot-meeting', name:'Robot meeting', content:DEFAULT_MEETING_TEMPLATE}];
+          activeMeetingTemplateId = '';
+        }
+      }
+
+      function saveMeetingTemplates() {
+        localStorage.setItem(MEETING_TEMPLATE_STORAGE_KEY, JSON.stringify(meetingTemplates));
+      }
+
+      function renderMeetingTemplateSelect() {
+        const selected = meetingTemplates.some(template => template.id === activeMeetingTemplateId) ? activeMeetingTemplateId : '';
+        activeMeetingTemplateId = selected;
+        els.logTemplateSelect.innerHTML = meetingTemplates.length
+          ? `<option value="">Choose a template…</option>${meetingTemplates.map(template => `<option value="${esc(template.id)}"${template.id === selected ? ' selected' : ''}>${esc(template.name)}</option>`).join('')}`
+          : '<option value="">No templates saved</option>';
+        els.logDeleteTemplate.disabled = !selected;
+      }
+
+      function applyMeetingTemplate(templateId) {
+        const template = meetingTemplates.find(item => item.id === templateId);
+        if (!template) return;
+        const current = els.logEditor.value;
+        if (current.trim() && current !== template.content && !window.confirm(`Replace this day’s log with the “${template.name}” template?`)) {
+          renderMeetingTemplateSelect();
+          return;
+        }
+        activeMeetingTemplateId = template.id;
+        els.logEditor.value = template.content;
+        els.logEditor.dispatchEvent(new Event('input', {bubbles:true}));
+        renderMeetingTemplateSelect();
+      }
+
+      function saveCurrentMeetingTemplate() {
+        const content = els.logEditor.value;
+        if (!content.trim()) { window.alert('Add some meeting log content before saving a template.'); return; }
+        const selected = meetingTemplates.find(item => item.id === activeMeetingTemplateId);
+        const name = window.prompt('Name this meeting template:', selected?.name || 'New meeting template');
+        if (name === null) return;
+        const cleanName = name.trim();
+        if (!cleanName) return;
+        const id = `meeting-template-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+        meetingTemplates.push({id, name:cleanName, content});
+        activeMeetingTemplateId = id;
+        saveMeetingTemplates();
+        renderMeetingTemplateSelect();
+      }
+
+      function deleteCurrentMeetingTemplate() {
+        const template = meetingTemplates.find(item => item.id === activeMeetingTemplateId);
+        if (!template || !window.confirm(`Delete the “${template.name}” meeting template? This cannot be undone.`)) return;
+        meetingTemplates = meetingTemplates.filter(item => item.id !== template.id);
+        activeMeetingTemplateId = meetingTemplates[0]?.id || '';
+        saveMeetingTemplates();
+        renderMeetingTemplateSelect();
+      }
+
+      function visibleMeetingDateKeys() {
+        const reference = logReferenceDate || new Date();
+        const keys = new Set(Object.keys(meetingLogs).filter(key => meetingDateFromKey(key)));
+        selectedLogDates.forEach(key => keys.add(key));
+        for (let offset = 0; offset < logHistoryDays; offset++) keys.add(meetingDateKey(addDays(reference, -offset)));
+        return [...keys].filter(key => {
+          const date = meetingDateFromKey(key);
+          return date && date <= reference;
+        }).sort((a,b) => b.localeCompare(a));
+      }
+
+      function renderMeetingDateList() {
+        const filter = els.logDateFilter.value.trim().toLowerCase();
+        const referenceKey = meetingDateKey(logReferenceDate || new Date());
+        let currentMonth = '';
+        let html = '';
+        visibleMeetingDateKeys().forEach(key => {
+          const date = meetingDateFromKey(key);
+          const fullLabel = meetingDateLabel(key);
+          const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+          const monthLabel = date.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+          const rowLabel = `${date.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}${key === referenceKey ? ' (Today)' : ''}`;
+          if (filter && !`${fullLabel} ${rowLabel} ${monthLabel}`.toLowerCase().includes(filter)) return;
+          if (monthKey !== currentMonth) {
+            html += `<div class="log-month-label">${esc(monthLabel)}</div>`;
+            currentMonth = monthKey;
+          }
+          const selected = selectedLogDates.has(key);
+          const lineCount = meetingLineCount(meetingLogs[key] || '');
+          const hasNote = lineCount > 0;
+          const lineLabel = hasNote ? `${lineCount} line${lineCount === 1 ? '' : 's'}` : '';
+          html += `<button class="log-date-button${hasNote ? ' has-note' : ''}" type="button" data-log-date="${key}" aria-pressed="${selected}" aria-label="${selected ? 'Deselect' : 'Select'} ${esc(fullLabel)}${hasNote ? `, ${lineLabel}` : ', empty log'}"><span class="log-date-dot"></span><span>${esc(rowLabel)}</span><span class="log-date-line-count">${hasNote ? lineCount : ''}</span><span class="log-date-check">✓</span></button>`;
+        });
+        els.logDateList.innerHTML = html || '<div class="log-heading-empty" style="padding:18px 14px">No days match that filter.</div>';
+      }
+
+      function markdownPlainText(value) {
+        return String(value).replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/[*_`~]/g, '').trim();
+      }
+
+      function markdownInline(value) {
+        let output = esc(value);
+        output = output.replace(/`([^`]+)`/g, '<code>$1</code>');
+        output = output.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        output = output.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        output = output.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+        output = output.replace(/(^|\s)\*([^*\n]+)\*(?=\s|$)/g, '$1<em>$2</em>');
+        output = output.replace(/(^|\s)_([^_\n]+)_(?=\s|$)/g, '$1<em>$2</em>');
+        return output;
+      }
+
+      function markdownSlug(value, seen) {
+        const base = markdownPlainText(value).toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-') || 'section';
+        const count = seen.get(base) || 0;
+        seen.set(base, count + 1);
+        return count ? `${base}-${count}` : base;
+      }
+
+      function renderMarkdownDocument(source = '', idPrefix = '') {
+        const lines = String(source).replace(/\r\n?/g, '\n').split('\n');
+        const html = [];
+        const headings = [];
+        const slugs = new Map();
+        let paragraph = [];
+        let listType = '';
+
+        const closeParagraph = () => {
+          if (!paragraph.length) return;
+          html.push(`<p>${paragraph.map(markdownInline).join('<br>')}</p>`);
+          paragraph = [];
+        };
+        const closeList = () => {
+          if (!listType) return;
+          html.push(`</${listType}>`);
+          listType = '';
+        };
+        const openList = type => {
+          closeParagraph();
+          if (listType === type) return;
+          closeList();
+          listType = type;
+          html.push(`<${type}>`);
+        };
+
+        lines.forEach(line => {
+          const heading = /^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
+          if (heading) {
+            closeParagraph(); closeList();
+            const level = heading[1].length;
+            const title = heading[2].trim();
+            const slug = markdownSlug(title, slugs);
+            const domId = `${idPrefix}${slug}`;
+            headings.push({level,title:markdownPlainText(title),slug,domId});
+            html.push(`<h${level} id="${esc(domId)}">${markdownInline(title)}</h${level}>`);
+            return;
+          }
+          if (/^\s{0,3}([-*_])(?:\s*\1){2,}\s*$/.test(line)) {
+            closeParagraph(); closeList(); html.push('<hr>'); return;
+          }
+          const checkbox = /^\s*[-*+]\s+\[([ xX])\]\s+(.+)$/.exec(line);
+          if (checkbox) {
+            openList('ul');
+            html.push(`<li><input type="checkbox" disabled${checkbox[1].toLowerCase() === 'x' ? ' checked' : ''}>${markdownInline(checkbox[2])}</li>`);
+            return;
+          }
+          const bullet = /^\s*[-*+]\s+(.+)$/.exec(line);
+          if (bullet) {
+            openList('ul'); html.push(`<li>${markdownInline(bullet[1])}</li>`); return;
+          }
+          const ordered = /^\s*\d+[.)]\s+(.+)$/.exec(line);
+          if (ordered) {
+            openList('ol'); html.push(`<li>${markdownInline(ordered[1])}</li>`); return;
+          }
+          const quote = /^\s*>\s?(.*)$/.exec(line);
+          if (quote) {
+            closeParagraph(); closeList(); html.push(`<blockquote>${markdownInline(quote[1])}</blockquote>`); return;
+          }
+          if (!line.trim()) {
+            closeParagraph(); closeList(); return;
+          }
+          closeList();
+          paragraph.push(line.trim());
+        });
+        closeParagraph(); closeList();
+        return {html:html.join(''), headings, wordCount:markdownWordCount(source)};
+      }
+
+      function previewTocMarkup(headings, outputStyle = false) {
+        const visible = headings.filter((heading, index) => heading.level <= 3 && !(outputStyle && index === 0 && heading.level === 1));
+        if (!visible.length) return outputStyle ? '' : '<strong>Table of contents</strong><span class="log-meta">Add headings to build a contents list.</span>';
+        if (outputStyle) {
+          return `<h3>TABLE OF CONTENTS</h3>${visible.map((heading,index) => `<a href="#${esc(heading.domId || heading.slug)}"><span>${index + 1}. ${esc(heading.title)}</span><span>${index + 1}</span></a>`).join('')}`;
+        }
+        return `<strong>Table of contents</strong>${visible.map(heading => `<a class="toc-depth-${heading.level}" href="#${esc(heading.domId || heading.slug)}">${esc(heading.title)}</a>`).join('')}`;
+      }
+
+      function renderLogPreview() {
+        const key = [...selectedLogDates][0];
+        const value = meetingLogs[key] || '';
+        const rendered = renderMarkdownDocument(value, 'daily-log-');
+        const words = `${rendered.wordCount} word${rendered.wordCount === 1 ? '' : 's'}`;
+        els.logEditorWords.textContent = words;
+        els.logPreviewWords.textContent = words;
+        els.logPreviewToc.innerHTML = previewTocMarkup(rendered.headings);
+        els.logPreviewContent.innerHTML = value.trim()
+          ? rendered.html
+          : '<div class="log-empty-preview"><strong>This day is still empty.</strong>Empty days remain in the list, ready whenever you need them.</div>';
+      }
+
+      function renderLogEditor() {
+        const key = [...selectedLogDates][0];
+        const date = meetingDateFromKey(key);
+        const referenceKey = meetingDateKey(logReferenceDate || new Date());
+        els.logEditorTitle.textContent = key === referenceKey ? 'Today’s log' : 'Meeting log';
+        els.logEditorDate.textContent = meetingDateLabel(key);
+        els.logEditor.value = meetingLogs[key] || '';
+        els.logEditor.disabled = !date;
+        renderMeetingTemplateSelect();
+        renderLogPreview();
+      }
+
+      function collectMeetingHeadings(keys) {
+        const headings = new Map();
+        keys.slice().sort().forEach(date => {
+          let current = null;
+          String(meetingLogs[date] || '').replace(/\r\n?/g, '\n').split('\n').forEach(line => {
+            const heading = /^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
+            if (heading) {
+              const title = markdownPlainText(heading[2]);
+              const key = title.toLowerCase().replace(/\s+/g, ' ');
+              if (!headings.has(key)) headings.set(key, {key,title,dates:new Set(),items:[]});
+              headings.get(key).dates.add(date);
+              current = key;
+              return;
+            }
+            if (!current) return;
+            const bullet = /^\s*(?:[-*+]\s+(?:\[([ xX])\]\s+)?|\d+[.)]\s+)(.+?)\s*$/.exec(line);
+            if (!bullet) return;
+            headings.get(current).items.push({date,text:bullet[2],checkbox:bullet[1] !== undefined,checked:(bullet[1] || '').toLowerCase() === 'x'});
+          });
+        });
+        return [...headings.values()];
+      }
+
+      function renderSummaryComposer() {
+        const keys = [...selectedLogDates].sort();
+        els.logComposeCount.textContent = `${keys.length} date${keys.length === 1 ? '' : 's'} selected`;
+        const headingData = collectMeetingHeadings(keys);
+        const signature = `${keys.join('|')}::${headingData.map(item => `${item.key}:${item.items.length}`).join('|')}`;
+        if (signature !== logHeadingSelectionSignature) {
+          selectedLogHeadingKeys = new Set(headingData.filter(item => item.items.length).map(item => item.key));
+          logHeadingSelectionSignature = signature;
+        }
+        els.logHeadingSection.classList.toggle('meeting-hidden', logSummaryMode === 'concatenate');
+        els.logHeadingList.innerHTML = headingData.length
+          ? headingData.map(item => `<label class="log-heading-option"><input type="checkbox" data-log-heading="${encodeURIComponent(item.key)}"${selectedLogHeadingKeys.has(item.key) ? ' checked' : ''}><span>${esc(item.title)}</span><span>${item.items.length} item${item.items.length === 1 ? '' : 's'}</span></label>`).join('')
+          : '<div class="log-heading-empty">No markdown headings were found in the selected logs. Add headings such as <strong># Lessons Learned</strong> or use Concatenate logs.</div>';
+        document.querySelectorAll('[name="log-summary-mode"]').forEach(input => input.checked = input.value === logSummaryMode);
+        renderSummaryOutput();
+      }
+
+      function summaryCoverage(keys) {
+        if (!keys.length) return 'No dates selected';
+        const first = meetingDateLabel(keys[0], false);
+        const last = meetingDateLabel(keys[keys.length - 1], false);
+        return first === last ? first : `${first}–${last}`;
+      }
+
+      function demoteMeetingMarkdown(value, amount) {
+        return String(value).replace(/^(\s{0,3})(#{1,6})(\s+)/gm, (_,space,marks,gap) => `${space}${'#'.repeat(Math.min(6, marks.length + amount))}${gap}`);
+      }
+
+      function buildExtractedSummary(keys, headingLevel = 2) {
+        const data = collectMeetingHeadings(keys).filter(item => selectedLogHeadingKeys.has(item.key));
+        const includeCheckboxes = els.logIncludeCheckboxes.checked;
+        const markerFor = item => item.checkbox ? `- [${item.checked ? 'x' : ' '}]` : '-';
+        const lines = [];
+        if (els.logGroupHeadings.checked) {
+          data.forEach(heading => {
+            const items = heading.items.filter(item => includeCheckboxes || !item.checkbox);
+            if (!items.length) return;
+            lines.push(`${'#'.repeat(headingLevel)} ${heading.title}`, '');
+            items.forEach(item => lines.push(`${markerFor(item)} ${item.text} _(${meetingDateLabel(item.date, false)})_`));
+            lines.push('');
+          });
+        } else {
+          keys.forEach(date => {
+            const sections = data.map(heading => ({heading,items:heading.items.filter(item => item.date === date && (includeCheckboxes || !item.checkbox))})).filter(section => section.items.length);
+            if (!sections.length) return;
+            lines.push(`${'#'.repeat(headingLevel)} ${meetingDateLabel(date, false)}`, '');
+            sections.forEach(({heading,items}) => {
+              lines.push(`${'#'.repeat(Math.min(6, headingLevel + 1))} ${heading.title}`, '');
+              items.forEach(item => lines.push(`${markerFor(item)} ${item.text}`));
+              lines.push('');
+            });
+          });
+        }
+        return lines.length ? lines.join('\n').trim() : '_No matching bullet or checkbox items were found._';
+      }
+
+      function buildConcatenatedLogs(keys, headingLevel = 2) {
+        const lines = [];
+        keys.forEach(date => {
+          lines.push(`${'#'.repeat(headingLevel)} ${meetingDateLabel(date, false)}`, '');
+          const value = (meetingLogs[date] || '').trim();
+          lines.push(value ? demoteMeetingMarkdown(value, headingLevel) : '_No meeting log was recorded for this day._', '');
+        });
+        return lines.join('\n').trim();
+      }
+
+      function buildMeetingSummaryMarkdown() {
+        const keys = [...selectedLogDates].sort();
+        if (!keys.length) return '';
+        const intro = `_${keys.length} selected date${keys.length === 1 ? '' : 's'} · ${summaryCoverage(keys)}_`;
+        if (logSummaryMode === 'concatenate') return `# Meeting logs\n\n${intro}\n\n${buildConcatenatedLogs(keys, 2)}`;
+        if (logSummaryMode === 'hybrid') return `# Meeting log summary\n\n${intro}\n\n## Collated sections\n\n${buildExtractedSummary(keys, 3)}\n\n## Full meeting logs\n\n${buildConcatenatedLogs(keys, 3)}`;
+        return `# Meeting log summary\n\n${intro}\n\n${buildExtractedSummary(keys, 2)}`;
+      }
+
+      function renderSummaryOutput() {
+        latestSummaryMarkdown = buildMeetingSummaryMarkdown();
+        if (!latestSummaryMarkdown) {
+          els.logOutputWords.textContent = '0 words';
+          els.logOutputToc.innerHTML = '';
+          els.logOutputContent.innerHTML = '<div class="log-no-selection"><div><strong>Select at least two days.</strong>Use Select days in the date list to begin composing a summary.</div></div>';
+          return;
+        }
+        const rendered = renderMarkdownDocument(latestSummaryMarkdown, 'meeting-summary-');
+        els.logOutputWords.textContent = `${rendered.wordCount} word${rendered.wordCount === 1 ? '' : 's'}`;
+        els.logOutputToc.classList.toggle('meeting-hidden', !els.logIncludeToc.checked);
+        els.logOutputToc.innerHTML = els.logIncludeToc.checked ? previewTocMarkup(rendered.headings, true) : '';
+        els.logOutputContent.innerHTML = rendered.html;
+      }
+
+      function summaryMarkdownForExport() {
+        if (!latestSummaryMarkdown || !els.logIncludeToc.checked) return latestSummaryMarkdown;
+        const rendered = renderMarkdownDocument(latestSummaryMarkdown);
+        const headings = rendered.headings.filter((heading,index) => heading.level <= 3 && !(index === 0 && heading.level === 1));
+        if (!headings.length) return latestSummaryMarkdown;
+        const lines = latestSummaryMarkdown.split('\n');
+        const firstLine = lines.shift();
+        const toc = headings.map(heading => `${'  '.repeat(Math.max(0, heading.level - 2))}- [${heading.title}](#${heading.slug})`).join('\n');
+        return `${firstLine}\n\n## Table of Contents\n\n${toc}\n${lines.join('\n')}`;
+      }
+
+      function renderMeetingLogWorkspace(referenceDate = null) {
+        if (referenceDate) logReferenceDate = new Date(referenceDate);
+        if (!logReferenceDate) logReferenceDate = new Date();
+        if (!selectedLogDates.size && !logMultiSelect) selectedLogDates.add(meetingDateKey(logReferenceDate));
+        renderMeetingDateList();
+        const count = selectedLogDates.size;
+        const editing = count === 1;
+        els.logEditorPane.classList.toggle('meeting-hidden', !editing);
+        els.logPreviewPane.classList.toggle('meeting-hidden', !editing);
+        els.logComposePane.classList.toggle('meeting-hidden', editing);
+        els.logOutputPane.classList.toggle('meeting-hidden', editing);
+        els.logMultiSelect.setAttribute('aria-pressed', String(logMultiSelect));
+        els.logMultiSelect.textContent = logMultiSelect ? 'Done selecting' : 'Select days';
+        els.meetingLogState.textContent = editing
+          ? meetingDateLabel([...selectedLogDates][0])
+          : `${count} date${count === 1 ? '' : 's'} selected · Summary mode`;
+        if (editing) renderLogEditor();
+        else renderSummaryComposer();
+      }
+
+      function insertIntoMeetingEditor(kind) {
+        const editor = els.logEditor;
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const selected = editor.value.slice(start,end);
+        let replacement = '';
+        if (kind === 'heading') replacement = `# ${selected || 'Heading'}`;
+        if (kind === 'bullet') replacement = `- ${selected}`;
+        if (kind === 'task') replacement = `- [ ] ${selected}`;
+        editor.setRangeText(replacement, start, end, 'end');
+        editor.dispatchEvent(new Event('input', {bubbles:true}));
+        editor.focus();
       }
 
       function renderGroups(parsed = parseAll()) {
@@ -1732,6 +2506,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
           els.schedulePicker.classList.remove('show');
           els.schedulePicker.removeAttribute('open');
           els.scheduleMenu.innerHTML = '';
+          selectedScheduleIds = null;
+          persistScheduleSelection();
           return;
         }
         els.schedulePicker.classList.add('show');
@@ -1742,6 +2518,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
           const resourceText = schedule.people.length ? `${esc(schedule.people.join(', '))} · ` : '';
           return `<label class="schedule-option"><input type="checkbox" value="${esc(schedule.id)}"${checked}><span><strong>${esc(schedule.title)}</strong><small>${schedule.isEventSchedule ? 'Events · ' : ''}${resourceText}${esc(pretty(schedule.start))} – ${esc(pretty(schedule.end))}</small></span></label>`;
         }).join('');
+        persistScheduleSelection();
       }
 
       function activeViewName() {
@@ -1782,6 +2559,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         });
         els.pastMonthControl.classList.toggle('show', ['gantt','timeline','groups'].includes(name));
         if (name === 'gantt') document.querySelector('.chart-scroll').scrollLeft = 0;
+        savedUiState.activeView = name;
+        persistUiState();
       }
 
       els.items.addEventListener('input', () => {
@@ -1789,6 +2568,100 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       });
       els.items.addEventListener('blur', validateEditor);
       els.items.addEventListener('scroll', syncHighlightScroll);
+      els.indentTimeline.addEventListener('click', () => adjustTimelineIndent('indent'));
+      els.unindentTimeline.addEventListener('click', () => adjustTimelineIndent('unindent'));
+      els.logMultiSelect.addEventListener('click', () => {
+        logMultiSelect = !logMultiSelect;
+        renderMeetingLogWorkspace();
+      });
+      els.logDateList.addEventListener('click', event => {
+        const button = event.target.closest('[data-log-date]');
+        if (!button) return;
+        const key = button.dataset.logDate;
+        if (logMultiSelect) {
+          if (selectedLogDates.has(key)) selectedLogDates.delete(key);
+          else selectedLogDates.add(key);
+        } else {
+          selectedLogDates = new Set([key]);
+        }
+        logHeadingSelectionSignature = '';
+        renderMeetingLogWorkspace();
+      });
+      els.logDateFilter.addEventListener('input', renderMeetingDateList);
+      els.logShowEarlier.addEventListener('click', () => {
+        logHistoryDays += 30;
+        renderMeetingDateList();
+      });
+      els.logEditor.addEventListener('input', () => {
+        if (selectedLogDates.size !== 1) return;
+        const key = [...selectedLogDates][0];
+        if (els.logEditor.value.trim()) meetingLogs[key] = els.logEditor.value;
+        else delete meetingLogs[key];
+        saveMeetingLogs();
+        els.logSaveState.textContent = 'Saved on this device';
+        renderLogPreview();
+        renderMeetingDateList();
+      });
+      document.querySelector('.log-editor-toolbar').addEventListener('click', event => {
+        const button = event.target.closest('[data-log-insert]');
+        if (button) insertIntoMeetingEditor(button.dataset.logInsert);
+      });
+      els.logTemplateSelect.addEventListener('change', () => {
+        if (!els.logTemplateSelect.value) { activeMeetingTemplateId = ''; renderMeetingTemplateSelect(); return; }
+        applyMeetingTemplate(els.logTemplateSelect.value);
+      });
+      els.logSaveTemplate.addEventListener('click', saveCurrentMeetingTemplate);
+      els.logDeleteTemplate.addEventListener('click', deleteCurrentMeetingTemplate);
+      document.querySelectorAll('[name="log-summary-mode"]').forEach(input => input.addEventListener('change', () => {
+        logSummaryMode = input.value;
+        renderSummaryComposer();
+      }));
+      els.logHeadingList.addEventListener('change', event => {
+        const input = event.target.closest('[data-log-heading]');
+        if (!input) return;
+        const key = decodeURIComponent(input.dataset.logHeading);
+        if (input.checked) selectedLogHeadingKeys.add(key);
+        else selectedLogHeadingKeys.delete(key);
+        renderSummaryOutput();
+      });
+      [els.logIncludeToc, els.logGroupHeadings, els.logIncludeCheckboxes].forEach(input => input.addEventListener('change', renderSummaryOutput));
+      els.logGenerate.addEventListener('click', () => {
+        renderSummaryOutput();
+        els.logGenerate.textContent = 'Summary refreshed';
+        setTimeout(() => { els.logGenerate.textContent = 'Generate summary'; }, 1200);
+      });
+      els.logCopySummary.addEventListener('click', async () => {
+        const markdown = summaryMarkdownForExport();
+        if (!markdown) return;
+        try {
+          await navigator.clipboard.writeText(markdown);
+        } catch (_) {
+          const helper = document.createElement('textarea');
+          helper.value = markdown;
+          helper.setAttribute('readonly','');
+          helper.style.position = 'fixed';
+          helper.style.opacity = '0';
+          document.body.appendChild(helper);
+          helper.select();
+          document.execCommand('copy');
+          helper.remove();
+        }
+        els.logCopySummary.textContent = 'Copied';
+        setTimeout(() => { els.logCopySummary.textContent = 'Copy markdown'; }, 1200);
+      });
+      els.logExportSummary.addEventListener('click', () => {
+        const markdown = summaryMarkdownForExport();
+        if (!markdown) return;
+        const blob = new Blob([markdown], {type:'text/markdown;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `meeting-summary-${meetingDateKey(logReferenceDate || new Date())}.md`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      });
       els.planSelect.addEventListener('change', () => activatePlan(els.planSelect.value));
       els.savePlan.addEventListener('click', savePlanAs);
       els.deletePlan.addEventListener('click', deleteActivePlan);
@@ -1813,6 +2686,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       els.calendarToday.addEventListener('click', () => { const parsed=parseAll(); calendarViewDate = new Date(parsed.today); renderCalendar(parsed); });
       els.calendarViewButtons.forEach(button => button.addEventListener('click', () => {
         calendarViewMode = button.dataset.calendarView;
+        savedUiState.calendarViewMode = calendarViewMode;
+        persistUiState();
         if (calendarViewMode === 'month') calendarViewDate = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
         const parsed = parseAll();
         if (calendarViewMode !== 'month') calendarViewDate = new Date(parsed.today);
@@ -1842,6 +2717,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
 
       load();
       const initial = parseAll();
+      loadMeetingLogs(initial.today);
+      loadMeetingTemplates();
       renderSchedulePicker(initial);
       renderEditWarnings(initial);
       renderToday(initial);
@@ -1850,6 +2727,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       renderCalendar(initial);
       renderGroups(initial);
       renderTasks(initial);
+      selectTab(savedUiState.activeView);
     })();
   </script>
 </body>

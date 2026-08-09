@@ -1,6 +1,6 @@
 # CalTaskLog (CTL)
 
-CalTaskLog is a self-contained, browser-based project planner. A plain-text plan is parsed into seven views: Edit, Today, Gantt, Timeline, Calendar, Groups, and Tasks. The application lives entirely in `index.html`; it has no external runtime dependencies and saves the current plan in browser-local storage.
+CalTaskLog is a self-contained, browser-based project planner and meeting logger. A plain-text plan is parsed into seven views: Edit, Today, Gantt, Timeline, Calendar, Groups, and Tasks. The Today view also contains a dated Markdown meeting-log workspace. The application lives entirely in `index.html`; it has no external runtime dependencies and saves plans and meeting notes in browser-local storage.
 
 ## Defining schedules and events
 
@@ -163,13 +163,15 @@ Times are optional and currently supported on single-date tasks.
 
 ```text
 Aug 7 2:30-3:30p: Chassis Design
+Sep 24 12:00pm: Kit and Kickoff
 Aug 7 14:30-15:30: Chassis Design review
 ```
 
 - Start and end times are stored as minutes after midnight.
+- A single time is treated as the item's start time; an end time is optional.
 - A missing meridiem is inferred from the other endpoint when possible; `2:30-3:30p` means 2:30 PM through 3:30 PM.
 - If no time is written, both time values are `null` and the task is an all-day event.
-- Current views deliberately show the task name and date span without adding time text.
+- Calendar labels include a timed item's start time as `Task name@3:30pm`. Other views continue to show the task name and date span without adding time text.
 
 ### Calendar timezone
 
@@ -339,12 +341,14 @@ Parse errors block chart/table rendering and send the user back to Edit. Year-an
 Edit is the source-of-truth text editor.
 
 - The editor uses a normal textarea with a synchronized presentation layer for syntax coloring.
+- **Indent** and **Unindent** move the current or selected timeline lines by one hierarchy level while keeping the affected block selected.
 - Syntax colors distinguish schedule/timezone markers, dates, times, recurrence rules, durations, resources, statuses, links, color codes, colons, and comments.
 - Typing updates the item count, syntax coloring, schedule list, and warnings.
 - Blank lines, comments, timezone directives, and schedule declarations are excluded from the item count.
 - The protected **Default example** is always available but read-only. **Save as** opens a browser naming dialog and creates an editable named copy; canceling the dialog makes no change.
 - Editable named entries save to browser-local storage after a short debounce. Existing single-editor content is migrated into `My plan` the first time the named-entry feature loads.
 - Storage is device/browser-local; there is no server synchronization.
+- The last selected app view, Calendar subview, and selected calendars are restored after refresh. Calendar selections are remembered separately for each saved entry.
 
 ### Today
 
@@ -369,6 +373,19 @@ After filtering:
 - If a parent and child belong to different resources, each is flat in its own lane.
 - If a parent is filtered out, its visible descendants are flat unless another displayed direct parent exists in that lane.
 - The columns are identical to Tasks: Task, Assignee, Status, Note, Start date, End date, and Timing.
+
+#### Meeting logs
+
+The full-width meeting-log workspace sits directly below the Today task list.
+
+- The date rail shows every day in the recent history, including dates with no note, and can reveal earlier days in 30-day increments. A filled dot and right-aligned line count indicate that a day has content.
+- Clicking a date normally opens that day's Markdown editor and live preview. Headings automatically create the preview table of contents.
+- The editor uses a 2/12 date rail, 5/12 editor, and 5/12 live preview layout. Reusable meeting templates can be applied from the editor dropdown; save the current log as a new template or delete the selected template after confirmation.
+- **Select days** changes the date rail to multi-select. Selecting zero or multiple dates opens the summary composer; **Done selecting** returns the rail to normal single-date behavior.
+- Summary modes can concatenate complete logs chronologically, extract bullets and checkboxes under dynamically detected headings, or combine both into a hybrid output.
+- Extracted items can be grouped by heading or by day. Checkbox items and the rendered/exported table of contents can each be included or omitted.
+- Summaries can be copied or downloaded as Markdown. Exported Markdown includes linked table-of-contents entries when that option is enabled.
+- Meeting logs and templates use separate browser-local storage entries (`caltasklog-meeting-logs-v1` and `caltasklog-meeting-templates-v1`) and remain separate from the timeline plan text.
 
 ### Gantt
 
@@ -472,7 +489,7 @@ Timing is calculated as follows:
 
 - The application is a single HTML file with embedded CSS and JavaScript.
 - The configured IANA timezone controls the current date; it defaults to the browser timezone when no directive is present.
-- Dates remain calendar-day values. Optional times are stored separately as nullable minute offsets and are not currently printed in view labels.
+- Dates remain calendar-day values. Optional times are stored separately as nullable minute offsets and appear in Calendar labels when present.
 - Day differences are calculated in whole calendar-day increments.
 - Rendering is regenerated from the editor text; the parsed task list is not independently editable.
 - Schedule selection changes every derived view but not the source text.
