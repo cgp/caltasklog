@@ -72,6 +72,9 @@
     .past-month-toggle { display: none; align-items: center; gap: 7px; margin: 0; padding: 0 13px; border-left: 1px solid #d6dde2; color: #52616a; font-size: 11px; font-weight: 750; white-space: nowrap; cursor: pointer; }
     .past-month-toggle.show { display: flex; }
     .past-month-toggle input { width: 15px; height: 15px; margin: 0; accent-color: #0b5ea8; }
+    .priority-filter { display: none; align-items: center; gap: 6px; margin: 0; padding: 0 12px; border-left: 1px solid #d6dde2; color: #52616a; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .priority-filter.show { display: flex; }
+    .priority-filter select { height: 29px; padding: 0 22px 0 7px; border: 1px solid #bdcbd3; border-radius: 5px; background: #fff; color: #30414b; font-size: 10px; font-weight: 750; }
     .tab:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(23,107,77,.22); outline-offset: 2px; }
 
     .panel { display: none; }
@@ -106,6 +109,7 @@
     .tok-duration { color: #087c6b; font-weight: 750; }
     .tok-group { color: #76520b; }
     .tok-status { color: #a12d67; font-weight: 750; }
+    .tok-priority { color: #b45309; font-weight: 850; }
     .tok-link { color: #007a78; text-decoration: underline; text-underline-offset: 2px; }
     .tok-color { color: #c53732; font-weight: 800; }
     .tok-separator { color: #9aa49e; }
@@ -261,7 +265,7 @@
     .tasks-summary { padding: 11px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
     .tasks-scroll { overflow-x: auto; }
     .tasks-table { min-width: 1160px; }
-    .tasks-head, .tasks-row { display: grid; grid-template-columns: minmax(280px,1.8fr) minmax(130px,.8fr) minmax(130px,.75fr) minmax(190px,1.15fr) 118px 118px 125px; }
+    .tasks-head, .tasks-row { display: grid; grid-template-columns: minmax(260px,1.7fr) 78px minmax(130px,.8fr) minmax(130px,.75fr) minmax(190px,1.15fr) 118px 118px 125px; }
     .tasks-head { min-height: 43px; background: #f7f9fa; border-bottom: 1px solid #cdd7df; color: #30414b; font-size: 11px; font-weight: 850; }
     .tasks-head > div, .tasks-row > div { display: flex; align-items: center; min-width: 0; padding: 8px 12px; border-right: 1px solid #d8e0e5; }
     .tasks-head > div:last-child, .tasks-row > div:last-child { border-right: 0; }
@@ -278,6 +282,13 @@
     .task-link:hover { color: #003f7a; text-decoration-thickness: 2px; text-decoration-color: currentColor; }
     .assignee-cell { color: #52636d; }
     .status-cell { font-weight: 800; text-transform: capitalize; }
+    .priority-cell { justify-content: center; }
+    .priority-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 27px; min-height: 20px; padding: 0 5px; border-radius: 4px; font-size: 10px; font-weight: 900; }
+    .priority-p0 { background: #4c1d3d; color: #fff; }
+    .priority-p1 { background: #fee2e2; color: #b42318; }
+    .priority-p2 { background: #fef3c7; color: #9a6700; }
+    .priority-p3 { background: #dbeafe; color: #1d4ed8; }
+    .priority-p4 { background: #e5e7eb; color: #4b5563; }
     .status-done { background: #a7efd9; color: #0d664c; }
     .status-progress { background: #ffe08a; color: #745600; }
     .status-blocked { background: #ffd1cc; color: #9a2f28; }
@@ -295,7 +306,7 @@
     .today-shell, .groups-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
     .today-summary, .groups-summary { padding: 11px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
     .today-scroll, .groups-scroll { overflow-x: auto; }
-    .today-table { min-width: 1160px; }
+    .today-table { min-width: 1240px; }
     .today-lane { border-bottom: 1px solid #aebfca; }
     .today-lane:last-child { border-bottom: 0; }
     .today-lane-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 31px; padding: 5px 12px; background: #edf4f8; border-bottom: 1px solid #bdcbd4; color: #173b56; font-size: 11px; font-weight: 900; }
@@ -492,6 +503,17 @@
       </div>
       <div class="topbar-actions">
         <label class="past-month-toggle" id="past-month-control"><input type="checkbox" id="show-empty-past-months">Show empty past months</label>
+        <label class="priority-filter" id="priority-filter-control">Priority
+          <select id="priority-filter" aria-label="Filter by priority">
+            <option value="all">All</option>
+            <option value="P0">P0</option>
+            <option value="P1">P1</option>
+            <option value="P2">P2</option>
+            <option value="P3">P3</option>
+            <option value="P4">P4</option>
+            <option value="none">None</option>
+          </select>
+        </label>
         <details class="schedule-picker" id="schedule-picker">
           <summary class="schedule-toggle"><span id="schedule-picker-label">Schedules</span></summary>
           <div class="schedule-menu" id="schedule-menu" role="group" aria-label="Displayed schedules"></div>
@@ -734,6 +756,7 @@
       let calendarViewDate = null;
       let calendarViewMode = 'month';
       let showEmptyPastMonths = false;
+      let priorityFilter = 'all';
       let savedUiState = {activeView:'edit', calendarViewMode:'month', selectedSchedulesByPlan:{}};
       let savedPlans = [];
       let activePlanId = 'default-example';
@@ -840,6 +863,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         logOutputPane: document.querySelector('#log-output-pane'), logOutputWords: document.querySelector('#log-output-words'), logOutputToc: document.querySelector('#log-output-toc'), logOutputContent: document.querySelector('#log-output-content'), logCopySummary: document.querySelector('#log-copy-summary'), logExportSummary: document.querySelector('#log-export-summary'),
         groupsChart: document.querySelector('#groups-chart'), groupsSummary: document.querySelector('#groups-summary'),
         pastMonthControl: document.querySelector('#past-month-control'), showEmptyPastMonths: document.querySelector('#show-empty-past-months'),
+        priorityFilterControl: document.querySelector('#priority-filter-control'), priorityFilter: document.querySelector('#priority-filter'),
         schedulePicker: document.querySelector('#schedule-picker'), scheduleMenu: document.querySelector('#schedule-menu'), schedulePickerLabel: document.querySelector('#schedule-picker-label'),
         editTab: document.querySelector('#edit-tab'), todayTab: document.querySelector('#today-tab'), displayTab: document.querySelector('#display-tab'), timelineTab: document.querySelector('#timeline-tab'), calendarTab: document.querySelector('#calendar-tab'), groupsTab: document.querySelector('#groups-tab'), tasksTab: document.querySelector('#tasks-tab'),
         editPanel: document.querySelector('#edit-panel'), todayPanel: document.querySelector('#today-panel'), displayPanel: document.querySelector('#display-panel'), timelinePanel: document.querySelector('#timeline-panel'), calendarPanel: document.querySelector('#calendar-panel'), groupsPanel: document.querySelector('#groups-panel'), tasksPanel: document.querySelector('#tasks-panel')
@@ -863,11 +887,12 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         return new Date(parts.year, parts.month - 1, parts.day);
       }
 
-      const SYNTAX_TOKEN = /(\{\{?https?:\/\/[^{}\s]+\}\}?|\[[^\]\n]*\]|\([^()\n]*\)|#[0-9a-fA-F]{3,8}\b|@timezone\s*=\s*[^\s]+|!%|%|rrule=[^:\s]+|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)?|\b\d+\s+(?:days?|weeks?)\b|\d{1,2}(?::\d{2})?\s*[ap]?m?\s*-\s*\d{1,2}(?::\d{2})?\s*[ap]?m?|:)/gi;
+      const SYNTAX_TOKEN = /(\{\{?https?:\/\/[^{}\s]+\}\}?|\[[^\]\n]*\]|\([^()\n]*\)|\^P[0-4]\b|#[0-9a-fA-F]{3,8}\b|@timezone\s*=\s*[^\s]+|!%|%|rrule=[^:\s]+|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?(?:\s*-\s*(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+)?\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)?|\b\d+\s+(?:days?|weeks?)\b|\d{1,2}(?::\d{2})?\s*[ap]?m?\s*-\s*\d{1,2}(?::\d{2})?\s*[ap]?m?|:)/gi;
       function syntaxClass(token) {
         if (token.startsWith('{')) return 'tok-link';
         if (token.startsWith('[')) return 'tok-status';
         if (token.startsWith('(')) return 'tok-group';
+        if (/^\^P[0-4]$/i.test(token)) return 'tok-priority';
         if (token.startsWith('#')) return 'tok-color';
         if (/^@timezone/i.test(token) || /^rrule=/i.test(token) || token.includes('%')) return 'tok-marker';
         if (token === ':') return 'tok-separator';
@@ -1220,13 +1245,22 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         if (linkMatch) { link = linkMatch[1]; detail = detail.slice(0, linkMatch.index).trim(); }
 
         let color = null;
+        let priority = '';
         const takeColor = () => {
           const match = detail.match(/\s+(#[0-9a-fA-F]{3,8})\s*$/);
           if (!match) return;
           color = match[1];
           detail = detail.slice(0, match.index).trim();
         };
+        const takePriority = () => {
+          const match = detail.match(/\s+\^P(\d+)\s*$/i);
+          if (!match) return;
+          if (!['0','1','2','3','4'].includes(match[1])) throw new Error(`Priority “^P${match[1]}” must be P0 through P4`);
+          priority = `P${match[1]}`;
+          detail = detail.slice(0, match.index).trim();
+        };
         takeColor();
+        takePriority();
 
         let status = '', note = '';
         const statusMatch = detail.match(/\s*\[([^\]]*)\]\s*$/);
@@ -1238,14 +1272,16 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
           detail = detail.slice(0, statusMatch.index).trim().replace(/\s+-\s*$/,'').trim();
         }
         takeColor();
+        takePriority();
 
         const peopleMatch = detail.match(/\s*\(([^()]*)\)\s*$/);
         const people = peopleMatch ? peopleMatch[1].split(',').map(p => p.trim()).filter(Boolean) : [];
         if (peopleMatch) detail = detail.slice(0, peopleMatch.index).trim();
         takeColor();
+        takePriority();
         if (color && !/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?([0-9a-fA-F]{2})?$/.test(color)) throw new Error(`Invalid color “${color}”`);
         if (!detail) throw new Error('Task or event name is missing');
-        return {name:detail, people, color, status, note, link};
+        return {name:detail, people, color, priority, status, note, link};
       }
 
       function parseLine(line, lineNumber, currentYear, depth, anchorRange = null, eventSchedule = false) {
@@ -1883,6 +1919,12 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         return 'status-other';
       }
 
+      function matchesPriority(task) {
+        if (priorityFilter === 'all') return true;
+        if (priorityFilter === 'none') return !task.priority;
+        return task.priority === priorityFilter;
+      }
+
       function taskTitleMarkup(task) {
         return task.link
           ? `<a class="task-link" href="${esc(task.link)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(task.name)}">${esc(task.name)}</a>`
@@ -1892,6 +1934,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       function taskTableHeader() {
         return `<div class="tasks-head" role="row">
           <div role="columnheader"><span class="head-mark"></span>Task</div>
+          <div role="columnheader"><span class="head-mark"></span>Priority</div>
           <div role="columnheader"><span class="head-mark"></span>Assignee</div>
           <div role="columnheader"><span class="head-mark"></span>Status</div>
           <div role="columnheader"><span class="head-mark"></span>Note</div>
@@ -1907,6 +1950,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
 
       function taskTableRow(task, {flat = false, depthOverride = null, parentStyle = null, referenceDate = new Date()} = {}) {
         const title = taskTitleMarkup(task);
+        const priority = task.priority ? `<span class="priority-badge priority-${task.priority.toLowerCase()}">${esc(task.priority)}</span>` : '<span class="empty-value">—</span>';
         const people = effectiveTaskPeople(task);
         const assignees = people.length ? esc(people.join(', ')) : '<span class="empty-value">—</span>';
         const status = task.status ? esc(task.status) : '<span class="empty-value">—</span>';
@@ -1919,6 +1963,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         const showAsParent = parentStyle === null ? (!flat && task.hasChildren) : parentStyle;
         return `<div class="tasks-row${showAsParent ? ' parent-row' : ''}" role="row">
           <div class="task-cell" role="cell" style="--task-depth:${rowDepth};--task-color:${esc(task.color)}">${title}</div>
+          <div class="priority-cell" role="cell">${priority}</div>
           <div class="assignee-cell" role="cell">${assignees}</div>
           <div class="status-cell ${statusTone}" role="cell">${status}</div>
           <div class="note-cell" role="cell">${note}</div>
@@ -1950,7 +1995,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
           const activeByDate = task.start && task.end && task.start <= today && task.end >= today;
           const actionableOverdue = task.end && task.end < today;
           const actionableByStatus = explicitlyActive(task);
-          return activeByDate || actionableOverdue || actionableByStatus;
+          return (activeByDate || actionableOverdue || actionableByStatus) && matchesPriority(task);
         }).map(({task, index}) => ({...task, people:taskResources(task, index), sourceIndex:index}));
 
         const lanes = new Map();
@@ -1985,7 +2030,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
         if (parsed.errors.length) return false;
 
-        const tasks = parsed.tasks.map((task, index) => ({task,index})).filter(({task}) => !task.isEvent);
+        const tasks = parsed.tasks.map((task, index) => ({task,index})).filter(({task}) => !task.isEvent && matchesPriority(task));
         const rows = tasks.map(({task,index}) => {
           let depth = 0;
           let parentIndex = task.parentIndex;
@@ -2558,6 +2603,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
           view.panel.classList.toggle('active', active);
         });
         els.pastMonthControl.classList.toggle('show', ['gantt','timeline','groups'].includes(name));
+        els.priorityFilterControl.classList.toggle('show', ['today','tasks'].includes(name));
+        els.priorityFilter.value = priorityFilter;
         if (name === 'gantt') document.querySelector('.chart-scroll').scrollLeft = 0;
         savedUiState.activeView = name;
         persistUiState();
@@ -2704,6 +2751,10 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       });
       els.showEmptyPastMonths.addEventListener('change', () => {
         showEmptyPastMonths = els.showEmptyPastMonths.checked;
+        renderActiveView(parseAll());
+      });
+      els.priorityFilter.addEventListener('change', () => {
+        priorityFilter = els.priorityFilter.value;
         renderActiveView(parseAll());
       });
       document.querySelector('.tabs').addEventListener('keydown', event => {

@@ -34,7 +34,7 @@ Use this ordering when generating or editing CalTaskLog plans:
 ! Schedule name (Default resource) - Start date - End date
 !% Event schedule 2026
 
-Date or date range[,rrule=RULE]: Task name (Resource, Resource) [Status - note] #color {{https://link}}
+Date or date range[,rrule=RULE]: Task name (Resource, Resource) [Status - note] ^P1 #color {{https://link}}
 %Date or date range: Event name [cancelled]
 ```
 
@@ -43,8 +43,9 @@ All metadata after the task name is optional. The canonical task detail order is
 1. Task name
 2. Resources in parentheses
 3. Status and optional note in square brackets
-4. Color as a hexadecimal value
-5. Link in braces, always last
+4. Priority as `^P0` through `^P4`
+5. Color as a hexadecimal value
+6. Link in braces, always last
 
 In compact form, square brackets below mean an optional grammar component; literal square brackets used for status are shown inside quotes:
 
@@ -52,9 +53,10 @@ In compact form, square brackets below mean an optional grammar component; liter
 item-line    := indentation ["%"] task-prefix ":" item-detail
 task-prefix  := [date-or-range [time-range] | integer duration-unit] [",rrule=" rrule]
 duration-unit := "day" | "days" | "week" | "weeks"
-item-detail  := name [resources] [status-block] [color] [link]
+item-detail  := name [resources] [status-block] [priority] [color] [link]
 resources    := "(" resource ["," resource ...] ")"
 status-block := "[" status [" - " note] "]"
+priority     := "^P0" | "^P1" | "^P2" | "^P3" | "^P4"
 color        := "#" followed by 3, 6, or 8 hexadecimal digits
 link         := "{{" HTTP-or-HTTPS-URL "}}"
 ```
@@ -296,6 +298,21 @@ Status comparisons are case-insensitive.
 
 A parent marked Done while any descendant is not Done produces a non-blocking warning in Edit. The warning identifies the parent's source line and counts its unfinished descendants. The plan still renders.
 
+### Priority
+
+Add a trailing priority token to a task or event detail:
+
+```text
+Sep 24: Submit registration ^P1
+Sep 25: Draft robot checklist ^P2 [In Progress]
+Sep 26: Reorganize spare parts ^P3
+Sep 27: Archive old scouting notes ^P4
+```
+
+- `P0` is the highest priority, followed by `P1` through `P4`.
+- Priorities are displayed in Today and Tasks, where the Priority filter can include one priority level or unprioritized work.
+- Priorities do not change display order.
+
 ### Links
 
 Place an HTTP or HTTPS URL at the end of the task detail inside braces. Double braces are the recommended form.
@@ -372,7 +389,7 @@ After filtering:
 - Parent/child styling is lane-local. A row is styled as a parent and a child is indented only when both active rows have a direct structural relationship and appear in the same resource lane.
 - If a parent and child belong to different resources, each is flat in its own lane.
 - If a parent is filtered out, its visible descendants are flat unless another displayed direct parent exists in that lane.
-- The columns are identical to Tasks: Task, Assignee, Status, Note, Start date, End date, and Timing.
+- The columns are identical to Tasks: Task, Priority, Assignee, Status, Note, Start date, End date, and Timing.
 
 #### Meeting logs
 
@@ -459,7 +476,7 @@ Tasks is the complete task inventory. Events are deliberately omitted.
 - Indentation mirrors the source hierarchy.
 - Rows with children receive parent styling.
 - Linked titles are clickable.
-- Columns are Task, Assignee, Status, Note, Start date, End date, and Timing.
+- Columns are Task, Priority, Assignee, Status, Note, Start date, End date, and Timing. The Priority filter is available in both Tasks and Today.
 - Dates omit the year when they fall in the current calendar year; other years are displayed.
 
 Timing is calculated as follows:
