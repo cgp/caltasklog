@@ -264,6 +264,33 @@
     .calendar-event.continues-before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
     .calendar-event.continues-after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
     a.calendar-event:hover { filter: brightness(.92); text-decoration: underline; }
+    .month-calendar-weekdays.list-mode { display: none; }
+    .month-calendar-grid.list-mode { background: #f4f7f9; }
+    .calendar-list-day { border-bottom: 1px solid #cfd9df; background: #fff; }
+    .calendar-list-day:last-child { border-bottom: 0; }
+    .calendar-list-day.is-empty { margin-bottom: 4px; }
+    .calendar-list-day.is-empty:last-child { margin-bottom: 0; }
+    .calendar-list-day.is-empty .calendar-list-day-head { border-bottom: 0; }
+    .calendar-list-day-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; padding: 8px 14px; background: #edf3f7; border-bottom: 1px solid #d5dee3; }
+    .calendar-list-day-head h3 { margin: 0; color: #18394f; font-size: 13px; font-weight: 900; }
+    .calendar-list-day.is-today .calendar-list-day-head h3 { color: #0b5ea8; }
+    .calendar-list-day-head small { color: #667985; font-size: 10px; font-weight: 750; white-space: nowrap; }
+    .calendar-list-items, .calendar-list-children { margin: 0; padding: 0; list-style: none; }
+    .calendar-list-items { padding: 6px 12px 10px; }
+    .calendar-list-node + .calendar-list-node > .calendar-list-item { border-top: 1px solid #e2e8ec; }
+    .calendar-list-node.has-children { padding: 0; }
+    .calendar-list-item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 14px; min-height: 36px; padding: 6px 9px 6px 10px; border: 0; border-left: 3px solid var(--list-color, #0b5ea8); background: transparent; }
+    .calendar-list-node.has-children > .calendar-list-item { background: #f7fafc; }
+    .calendar-list-node.context-only > .calendar-list-item { opacity: .82; }
+    .calendar-list-item.event-complete { opacity: .68; }
+    .calendar-list-item.event-cancelled .calendar-list-title { text-decoration: line-through; }
+    .calendar-list-item.event-rescheduled { outline: 1px dashed #71828c; outline-offset: -3px; }
+    .calendar-list-title { min-width: 0; overflow: hidden; color: #18394f; font-size: 11px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+    a.calendar-list-title { color: #075fae; text-decoration: underline; text-decoration-color: rgba(7,95,174,.55); text-underline-offset: 2px; }
+    .calendar-list-start { grid-column: 1; color: #637681; font-size: 9px; font-weight: 750; }
+    .calendar-list-time { grid-column: 2; grid-row: 1 / span 2; align-self: center; padding: 3px 6px; border-radius: 4px; background: #e6eef4; color: #26495f; font-size: 9px; font-weight: 900; white-space: nowrap; }
+    .calendar-list-item.is-timed .calendar-list-time { grid-row: 1; }
+    .calendar-list-children { margin: 0 0 2px 12px; padding-left: 10px; border-left: 1px solid #c8d6df; }
 
     .tasks-shell { background: #fff; border: 1px solid #cdd7df; border-radius: 12px; overflow: hidden; box-shadow: 0 12px 35px rgba(23,52,73,.07); }
     .tasks-summary { padding: 11px 14px; color: var(--muted); font-size: 11px; border-bottom: 1px solid #d8e0e5; }
@@ -477,6 +504,11 @@
       .calendar-event-title { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 11px; }
       .calendar-event-time { order: -1; display: block; min-width: 0; margin-left: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 8px; font-weight: 900; line-height: 10px; }
       .calendar-event-time::before { content: ""; }
+      .calendar-list-day-head { padding: 7px 10px; }
+      .calendar-list-items { padding: 8px; }
+      .calendar-list-node.has-children { padding: 0; }
+      .calendar-list-item { gap: 4px 8px; padding: 6px 8px 6px 9px; }
+      .calendar-list-children { margin-left: 7px; padding-left: 7px; }
       .editor-head, .editor-body, .display-head { padding-left: 20px; padding-right: 20px; }
       .editor-head { display: block; }
       .status { margin-top: 15px; }
@@ -752,6 +784,7 @@
               <button class="calendar-view-button" type="button" data-calendar-view="month" aria-pressed="true">Month</button>
               <button class="calendar-view-button" type="button" data-calendar-view="7">7 days</button>
               <button class="calendar-view-button" type="button" data-calendar-view="4">4 days</button>
+              <button class="calendar-view-button" type="button" data-calendar-view="list">List</button>
             </div>
           </div>
         </div>
@@ -987,7 +1020,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
             : {};
           savedUiState = {
             activeView:validViews.has(stored?.activeView) ? stored.activeView : 'edit',
-            calendarViewMode:['month','7','4'].includes(stored?.calendarViewMode) ? stored.calendarViewMode : 'month',
+            calendarViewMode:['month','7','4','list'].includes(stored?.calendarViewMode) ? stored.calendarViewMode : 'month',
             selectedSchedulesByPlan
           };
         } catch (_) {
@@ -1834,6 +1867,67 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         return `${pretty(start)} – ${pretty(end)}`;
       }
 
+      function renderCalendarList(tasks, periodStart, today) {
+        const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        const childrenByParent = new Map();
+        tasks.forEach((task, index) => {
+          if (task.parentIndex === null || task.parentIndex === undefined) return;
+          if (!childrenByParent.has(task.parentIndex)) childrenByParent.set(task.parentIndex, []);
+          childrenByParent.get(task.parentIndex).push(index);
+        });
+
+        const renderNode = (index, includedIndexes, activeIndexes, day) => {
+          const task = tasks[index];
+          const childIndexes = (childrenByParent.get(index) || []).filter(childIndex => includedIndexes.has(childIndex));
+          const hasChildren = childIndexes.length > 0;
+          const isActive = activeIndexes.has(index);
+          const displayName = planningName(task);
+          const title = task.link
+            ? `<a class="calendar-list-title" href="${esc(task.link)}" target="_blank" rel="noopener noreferrer">${esc(displayName)}</a>`
+            : `<span class="calendar-list-title">${esc(displayName)}</span>`;
+          const timeLabel = calendarTimeLabel(task.startTime);
+          const time = timeLabel ? `<span class="calendar-list-time">${esc(timeLabel)}</span>` : '';
+          const spansYears = task.start && task.end && task.start.getFullYear() !== task.end.getFullYear();
+          const listDate = date => date.toLocaleDateString('en-US', {month:'short', day:'numeric', ...(spansYears ? {year:'numeric'} : {})});
+          const detailLabel = timeLabel || !task.start || !task.end
+            ? ''
+            : sameDay(task.start, task.end)
+              ? 'All Day'
+              : `From ${listDate(task.start)} to ${listDate(task.end)}`;
+          const detail = detailLabel ? `<span class="calendar-list-start">${esc(detailLabel)}</span>` : '';
+          const classes = `calendar-list-node${hasChildren ? ' has-children' : ''}${isActive ? '' : ' context-only'}`;
+          return `<li class="${classes}">
+            <div class="calendar-list-item${timeLabel ? ' is-timed' : ''}${eventClassNames(task, today)}" style="--list-color:${esc(task.color)}">
+              ${title}${detail}${time}
+            </div>
+            ${hasChildren ? `<ul class="calendar-list-children">${childIndexes.map(childIndex => renderNode(childIndex, includedIndexes, activeIndexes, day)).join('')}</ul>` : ''}
+          </li>`;
+        };
+
+        return Array.from({length:7}, (_, dayOffset) => {
+          const day = addDays(periodStart, dayOffset);
+          const activeIndexes = new Set(tasks.map((task, index) => ({task, index})).filter(({task}) => task.start && task.end && task.start <= day && task.end >= day).map(({index}) => index));
+          const includedIndexes = new Set(activeIndexes);
+          activeIndexes.forEach(index => {
+            let parentIndex = tasks[index].parentIndex;
+            while (parentIndex !== null && parentIndex !== undefined && tasks[parentIndex]) {
+              includedIndexes.add(parentIndex);
+              parentIndex = tasks[parentIndex].parentIndex;
+            }
+          });
+          const rootIndexes = [...includedIndexes].filter(index => !includedIndexes.has(tasks[index].parentIndex)).sort((a,b) => a - b);
+          const label = day.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+          const todayLabel = sameDay(day, today) ? ' · Today' : '';
+          const itemCount = activeIndexes.size;
+          const isEmpty = rootIndexes.length === 0;
+          const countLabel = isEmpty ? 'No scheduled items' : `${itemCount} item${itemCount === 1 ? '' : 's'}`;
+          return `<section class="calendar-list-day${sameDay(day,today) ? ' is-today' : ''}${isEmpty ? ' is-empty' : ''}">
+            <header class="calendar-list-day-head"><h3>${esc(label)}${todayLabel}</h3><small>${countLabel}</small></header>
+            ${isEmpty ? '' : `<ul class="calendar-list-items">${rootIndexes.map(index => renderNode(index, includedIndexes, activeIndexes, day)).join('')}</ul>`}
+          </section>`;
+        }).join('');
+      }
+
       function renderCalendar(parsed = parseAll()) {
         els.errors.classList.toggle('show', parsed.errors.length > 0);
         els.errors.innerHTML = parsed.errors.length ? `<strong>Please check ${parsed.errors.length === 1 ? 'this item' : 'these items'}:</strong><br>${parsed.errors.map(esc).join('<br>')}` : '';
@@ -1847,6 +1941,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         if (calendarViewDate < firstDay) calendarViewDate = new Date(firstDay);
         if (calendarViewDate > lastDay) calendarViewDate = new Date(lastDay);
 
+        const isListView = calendarViewMode === 'list';
         let periodStart, periodEnd, logicalStart, logicalEnd, columns, rowCount, title;
         if (calendarViewMode === 'month') {
           logicalStart = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 1);
@@ -1856,6 +1951,14 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
           columns = 7;
           rowCount = 6;
           title = logicalStart.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+        } else if (isListView) {
+          periodStart = new Date(calendarViewDate);
+          periodEnd = addDays(periodStart, 6);
+          logicalStart = periodStart;
+          logicalEnd = periodEnd;
+          columns = 7;
+          rowCount = 0;
+          title = calendarRangeTitle(periodStart, periodEnd);
         } else {
           columns = Number(calendarViewMode);
           calendarViewDate = new Date(today);
@@ -1869,6 +1972,21 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
 
         const events = tasks.filter(task => task.start && task.end);
         const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        if (isListView) {
+          const visibleEventCount = events.filter(task => task.start <= logicalEnd && task.end >= logicalStart).length;
+          els.monthCalendarTitle.textContent = title;
+          els.monthCalendarSummary.textContent = `${visibleEventCount} dated item${visibleEventCount === 1 ? '' : 's'} across 7 days`;
+          els.monthCalendarWeekdays.innerHTML = '';
+          els.monthCalendarWeekdays.classList.add('list-mode');
+          els.monthCalendarGrid.classList.add('list-mode');
+          els.monthCalendarGrid.innerHTML = renderCalendarList(tasks, periodStart, today);
+          els.calendarPrev.disabled = logicalStart <= firstDay;
+          els.calendarNext.disabled = logicalEnd >= lastDay;
+          els.calendarViewButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.calendarView === calendarViewMode)));
+          return true;
+        }
+        els.monthCalendarWeekdays.classList.remove('list-mode');
+        els.monthCalendarGrid.classList.remove('list-mode');
         const weekdayCells = Array.from({length:columns}, (_, index) => {
           const day = addDays(periodStart, index);
           const weekday = day.toLocaleDateString('en-US', {weekday:'short'});
@@ -2633,6 +2751,12 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         if (restoreFocus && wasOpen) els.mobileNavToggle.focus();
       }
 
+      function closeSchedulePicker(restoreFocus = false) {
+        const wasOpen = els.schedulePicker.hasAttribute('open');
+        els.schedulePicker.removeAttribute('open');
+        if (restoreFocus && wasOpen) els.schedulePicker.querySelector('summary')?.focus();
+      }
+
       function selectTab(name) {
         const views = [
           {name:'edit', tab:els.editTab, panel:els.editPanel},
@@ -2778,23 +2902,28 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         if (opening) els.tabs.querySelector('[aria-selected="true"]')?.focus();
       });
       document.addEventListener('click', event => {
-        if (!els.tabs.classList.contains('is-open')) return;
-        if (els.tabs.contains(event.target) || els.mobileNavToggle.contains(event.target)) return;
-        closeMobileNav();
+        if (els.tabs.classList.contains('is-open') && !els.tabs.contains(event.target) && !els.mobileNavToggle.contains(event.target)) closeMobileNav();
+        if (els.schedulePicker.hasAttribute('open') && !els.schedulePicker.contains(event.target)) closeSchedulePicker();
       });
       document.addEventListener('keydown', event => {
-        if (event.key === 'Escape' && els.tabs.classList.contains('is-open')) closeMobileNav(true);
+        if (event.key !== 'Escape') return;
+        const navWasOpen = els.tabs.classList.contains('is-open');
+        const scheduleWasOpen = els.schedulePicker.hasAttribute('open');
+        closeMobileNav(navWasOpen);
+        closeSchedulePicker(!navWasOpen && scheduleWasOpen);
       });
       window.addEventListener('resize', () => {
         if (window.innerWidth > 960) closeMobileNav();
       });
       els.calendarPrev.addEventListener('click', () => {
         if (calendarViewMode === 'month') calendarViewDate.setMonth(calendarViewDate.getMonth() - 1);
+        else if (calendarViewMode === 'list') calendarViewDate = addDays(calendarViewDate, -7);
         else calendarViewDate = new Date(parseAll().today);
         renderCalendar(parseAll());
       });
       els.calendarNext.addEventListener('click', () => {
         if (calendarViewMode === 'month') calendarViewDate.setMonth(calendarViewDate.getMonth() + 1);
+        else if (calendarViewMode === 'list') calendarViewDate = addDays(calendarViewDate, 7);
         else calendarViewDate = new Date(parseAll().today);
         renderCalendar(parseAll());
       });
