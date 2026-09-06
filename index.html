@@ -548,6 +548,7 @@
       :root { --label-width: 25%; }
     }
   </style>
+  <link rel="stylesheet" href="workspace.css">
 </head>
 <body>
   <main class="app">
@@ -808,6 +809,9 @@
     </section>
   </main>
 
+  <script src="storage.js"></script>
+  <script src="transfer.js"></script>
+  <script src="workspace-ui.js"></script>
   <script>
     (() => {
       'use strict';
@@ -873,11 +877,7 @@ Sep 19 8:00-9:30a: Long 6-mile run #0b5ea8
 Sep 26 7:00-8:00a: Four 800-meter intervals #d97706
 Oct 3-16: Taper and recovery period #64748b
 Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
-      const PLAN_STORAGE_KEY = 'caltasklog-saved-plans';
-      const LEGACY_STORAGE_KEY = 'planline-data';
       const UI_STATE_STORAGE_KEY = 'caltasklog-ui-state-v1';
-      const MEETING_LOG_STORAGE_KEY = 'caltasklog-meeting-logs-v1';
-      const MEETING_TEMPLATE_STORAGE_KEY = 'caltasklog-meeting-templates-v1';
       const DEFAULT_MEETING_TEMPLATE = `# Agenda
 
 -\u0020
@@ -902,6 +902,12 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
 
 - [ ]\u0020`;
       let meetingLogs = {};
+      let workspaceClient = null;
+      let applyingWorkspace = false;
+      let currentWorkspaceId = '';
+      let workspaceReadOnly = false;
+      let workspaceTimezone = null;
+      let lastWorkspaceData = '';
       let meetingTemplates = [];
       let activeMeetingTemplateId = '';
       let selectedLogDates = new Set();
@@ -1013,12 +1019,13 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       function normalizePlanName(value) { return value.trim().replace(/\s+/g, ' '); }
       function loadUiState() {
         try {
-          const stored = JSON.parse(localStorage.getItem(UI_STATE_STORAGE_KEY) || 'null');
+          const stored = JSON.parse(localStorage.getItem(UI_STATE_STORAGE_KEY + ':' + currentWorkspaceId) || 'null');
           const validViews = new Set(['edit','today','gantt','timeline','calendar','groups','tasks']);
           const selectedSchedulesByPlan = stored?.selectedSchedulesByPlan && typeof stored.selectedSchedulesByPlan === 'object'
             ? Object.fromEntries(Object.entries(stored.selectedSchedulesByPlan).filter(([,ids]) => Array.isArray(ids)).map(([planId,ids]) => [planId, ids.filter(id => typeof id === 'string')]))
             : {};
           savedUiState = {
+            activePlanId:typeof stored?.activePlanId === 'string' ? stored.activePlanId : 'default-example',
             activeView:validViews.has(stored?.activeView) ? stored.activeView : 'edit',
             calendarViewMode:['month','7','4','list'].includes(stored?.calendarViewMode) ? stored.calendarViewMode : 'month',
             selectedSchedulesByPlan
@@ -1030,7 +1037,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
       function persistUiState() {
         try {
-          localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(savedUiState));
+          localStorage.setItem(UI_STATE_STORAGE_KEY + ':' + currentWorkspaceId, JSON.stringify({...savedUiState, activePlanId}));
         } catch (_) { /* Storage can be unavailable in strict private modes. */ }
       }
       function restoreScheduleSelection(planId) {
@@ -1052,11 +1059,9 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         return `${base} ${number}`;
       }
       function persistPlans() {
-        try {
-          const writablePlans = savedPlans.filter(plan => !plan.readOnly).map(({id,name,items}) => ({id,name,items}));
-          localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify({activePlanId, plans:writablePlans}));
-          localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({items:els.items.value}));
-        } catch (_) { /* Storage can be unavailable in strict private modes. */ }
+        if (applyingWorkspace || workspaceReadOnly) return;
+        workspaceClient?.save('plan', savedPlans.filter(plan => plan.id !== 'default-example'));
+        persistUiState();
       }
       function renderPlanControls() {
         const plan = activePlan();
@@ -1066,12 +1071,17 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.indentTimeline.disabled = Boolean(plan.readOnly);
         els.unindentTimeline.disabled = Boolean(plan.readOnly);
         els.deletePlan.disabled = Boolean(plan.readOnly);
-        els.planNote.textContent = plan.readOnly ? 'This built-in example is protected. Use Save as to make an editable copy.' : 'Changes to this entry save automatically on this device.';
-        els.save.textContent = plan.readOnly ? 'Default example is read only' : 'Saved on this device';
+        els.planNote.textContent = workspaceReadOnly ? 'Published workspace — make a local copy in Storage to edit.' : plan.readOnly ? 'This built-in example is protected. Use Save as to make an editable copy.' : 'Changes save to this workspace. Check the workspace bar for sync status.';
+        els.save.textContent = workspaceClient?.status() || 'Opening workspace…';
+        els.savePlan.disabled = workspaceReadOnly || !workspaceClient;
       }
       function activatePlan(id) {
         const plan = savedPlans.find(entry => entry.id === id);
         if (!plan) return;
+        if (!applyingWorkspace) {
+          const previous = activePlan();
+          if (previous && !previous.readOnly && previous.id !== id) previous.items = els.items.value;
+        }
         clearTimeout(saveTimer);
         clearTimeout(validationTimer);
         activePlanId = plan.id;
@@ -1088,26 +1098,8 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
       function load() {
         loadUiState();
-        const builtIn = defaultPlan();
-        try {
-          const stored = JSON.parse(localStorage.getItem(PLAN_STORAGE_KEY) || 'null');
-          const customPlans = Array.isArray(stored?.plans) ? stored.plans
-            .filter(plan => typeof plan?.name === 'string' && typeof plan?.items === 'string')
-            .map(plan => ({id:typeof plan.id === 'string' ? plan.id : makePlanId(), name:normalizePlanName(plan.name) || 'Untitled entry', items:plan.items, readOnly:false})) : [];
-          savedPlans = [builtIn, ...customPlans];
-          activePlanId = savedPlans.some(plan => plan.id === stored?.activePlanId) ? stored.activePlanId : builtIn.id;
-          if (!customPlans.length && !stored) {
-            const legacy = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || 'null');
-            if (typeof legacy?.items === 'string' && legacy.items !== DEFAULT_ITEMS) {
-              const migrated = {id:makePlanId(), name:'My plan', items:legacy.items, readOnly:false};
-              savedPlans.push(migrated);
-              activePlanId = migrated.id;
-            }
-          }
-        } catch (_) {
-          savedPlans = [builtIn];
-          activePlanId = builtIn.id;
-        }
+        savedPlans = [defaultPlan()];
+        activePlanId = 'default-example';
         activatePlan(activePlanId);
       }
 
@@ -1117,14 +1109,12 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         const plan = activePlan();
         if (!plan || plan.readOnly) return;
         clearTimeout(saveTimer);
-        els.save.textContent = 'Saving…';
-        saveTimer = setTimeout(() => {
-          plan.items = els.items.value;
-          persistPlans();
-          els.save.textContent = 'Saved on this device';
-        }, 250);
+        plan.items = els.items.value;
+        persistPlans();
+        workspaceClient?.status();
       }
       function savePlanAs() {
+        if (workspaceReadOnly || !workspaceClient) return;
         const source = activePlan();
         let requested;
         try { requested = window.prompt('Save this entry as:', uniquePlanName(`${source.name} copy`)); }
@@ -1139,7 +1129,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         activePlanId = target.id;
         renderPlanControls();
         persistPlans();
-        els.save.textContent = 'Saved on this device';
+        workspaceClient?.status();
       }
       function deleteActivePlan() {
         const plan = activePlan();
@@ -1561,7 +1551,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         const globalErrors = [];
         const globalWarnings = [];
         const rawLines = els.items.value.split(/\r?\n/);
-        let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        let timezone = workspaceTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
         rawLines.forEach((raw,index) => {
           const line = raw.trim();
           if (!/^@timezone\b/i.test(line)) return;
@@ -2239,39 +2229,22 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
 
       function loadMeetingLogs(referenceDate) {
-        try {
-          const saved = JSON.parse(localStorage.getItem(MEETING_LOG_STORAGE_KEY) || '{}');
-          meetingLogs = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
-        } catch (_) {
-          meetingLogs = {};
-        }
+        meetingLogs = {};
         logReferenceDate = new Date(referenceDate);
         selectedLogDates = new Set([meetingDateKey(logReferenceDate)]);
       }
 
       function saveMeetingLogs() {
-        localStorage.setItem(MEETING_LOG_STORAGE_KEY, JSON.stringify(meetingLogs));
+        if (!applyingWorkspace) workspaceClient?.save('log', meetingLogs);
       }
 
       function loadMeetingTemplates() {
-        try {
-          const raw = localStorage.getItem(MEETING_TEMPLATE_STORAGE_KEY);
-          if (raw === null) {
-            meetingTemplates = [{id:'robot-meeting', name:'Robot meeting', content:DEFAULT_MEETING_TEMPLATE}];
-            activeMeetingTemplateId = '';
-            return;
-          }
-          const saved = JSON.parse(raw);
-          meetingTemplates = Array.isArray(saved) ? saved.filter(template => template && typeof template.id === 'string' && typeof template.name === 'string' && typeof template.content === 'string') : [];
-          activeMeetingTemplateId = '';
-        } catch (_) {
-          meetingTemplates = [{id:'robot-meeting', name:'Robot meeting', content:DEFAULT_MEETING_TEMPLATE}];
-          activeMeetingTemplateId = '';
-        }
+        meetingTemplates = [];
+        activeMeetingTemplateId = '';
       }
 
       function saveMeetingTemplates() {
-        localStorage.setItem(MEETING_TEMPLATE_STORAGE_KEY, JSON.stringify(meetingTemplates));
+        if (!applyingWorkspace) workspaceClient?.save('template', meetingTemplates);
       }
 
       function renderMeetingTemplateSelect() {
@@ -2280,10 +2253,11 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         els.logTemplateSelect.innerHTML = meetingTemplates.length
           ? `<option value="">Choose a template…</option>${meetingTemplates.map(template => `<option value="${esc(template.id)}"${template.id === selected ? ' selected' : ''}>${esc(template.name)}</option>`).join('')}`
           : '<option value="">No templates saved</option>';
-        els.logDeleteTemplate.disabled = !selected;
+        els.logDeleteTemplate.disabled = workspaceReadOnly || !selected;
       }
 
       function applyMeetingTemplate(templateId) {
+        if (workspaceReadOnly || !workspaceClient) return;
         const template = meetingTemplates.find(item => item.id === templateId);
         if (!template) return;
         const current = els.logEditor.value;
@@ -2298,6 +2272,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
 
       function saveCurrentMeetingTemplate() {
+        if (workspaceReadOnly || !workspaceClient) return;
         const content = els.logEditor.value;
         if (!content.trim()) { window.alert('Add some meeting log content before saving a template.'); return; }
         const selected = meetingTemplates.find(item => item.id === activeMeetingTemplateId);
@@ -2313,6 +2288,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
 
       function deleteCurrentMeetingTemplate() {
+        if (workspaceReadOnly || !workspaceClient) return;
         const template = meetingTemplates.find(item => item.id === activeMeetingTemplateId);
         if (!template || !window.confirm(`Delete the “${template.name}” meeting template? This cannot be undone.`)) return;
         meetingTemplates = meetingTemplates.filter(item => item.id !== template.id);
@@ -2476,7 +2452,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         const referenceKey = meetingDateKey(logReferenceDate || new Date());
         els.logEditorTitle.textContent = key === referenceKey ? 'Today’s log' : 'Meeting log';
         els.logEditorDate.textContent = meetingDateLabel(key);
-        els.logEditor.value = meetingLogs[key] || '';
+        if (els.logEditor.value !== (meetingLogs[key] || '')) els.logEditor.value = meetingLogs[key] || '';
         els.logEditor.disabled = !date;
         renderMeetingTemplateSelect();
         renderLogPreview();
@@ -2627,6 +2603,7 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       }
 
       function insertIntoMeetingEditor(kind) {
+        if (workspaceReadOnly || !workspaceClient) return;
         const editor = els.logEditor;
         const start = editor.selectionStart;
         const end = editor.selectionEnd;
@@ -2815,12 +2792,13 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
         renderMeetingDateList();
       });
       els.logEditor.addEventListener('input', () => {
+        if (workspaceReadOnly || !workspaceClient) return;
         if (selectedLogDates.size !== 1) return;
         const key = [...selectedLogDates][0];
         if (els.logEditor.value.trim()) meetingLogs[key] = els.logEditor.value;
         else delete meetingLogs[key];
         saveMeetingLogs();
-        els.logSaveState.textContent = 'Saved on this device';
+        workspaceClient?.status();
         renderLogPreview();
         renderMeetingDateList();
       });
@@ -2976,6 +2954,72 @@ Oct 17 8:00-10:00a: Fall 10K race #dc2626`;
       renderGroups(initial);
       renderTasks(initial);
       selectTab(savedUiState.activeView);
+      CTLWorkspace.mount({
+        flush() {
+          clearTimeout(saveTimer);
+          const plan = activePlan();
+          if (plan && !plan.readOnly && !applyingWorkspace) {
+            plan.items = els.items.value;
+            persistPlans();
+          }
+        },
+        status(text) { els.save.textContent = text; els.logSaveState.textContent = text; },
+        apply(data) {
+          const signature = JSON.stringify(data);
+          if (signature === lastWorkspaceData) return;
+          lastWorkspaceData = signature;
+          applyingWorkspace = true;
+          try {
+            const switched = currentWorkspaceId !== data.workspaceId;
+            currentWorkspaceId = data.workspaceId;
+            workspaceTimezone = data.timezone;
+            workspaceReadOnly = data.readOnly;
+            if (switched) { loadUiState(); activePlanId = savedUiState.activePlanId || 'default-example'; }
+            savedPlans = [defaultPlan(), ...data.plans];
+            if (!savedPlans.some(plan => plan.id === activePlanId)) activePlanId = data.plans[0]?.id || 'default-example';
+            meetingLogs = data.logs;
+            meetingTemplates = data.templates;
+            const plan = activePlan();
+            if (els.items.value !== plan.items) els.items.value = plan.items;
+            selectedScheduleIds = restoreScheduleSelection(plan.id);
+            updateCount(); updateHighlight(); renderPlanControls();
+            const parsed = parseAll();
+            renderSchedulePicker(parsed); renderEditErrors(parsed); renderEditWarnings(parsed);
+            if (switched) {
+              selectedLogDates = new Set([meetingDateKey(parsed.today)]);
+              activeMeetingTemplateId = ''; logMultiSelect = false; logReferenceDate = parsed.today;
+              selectTab(savedUiState.activeView);
+            }
+            renderMeetingLogWorkspace(parsed.today);
+            renderActiveView(parsed);
+            els.logEditor.readOnly = data.readOnly;
+            for (const control of [els.savePlan, els.logTemplateSelect, els.logSaveTemplate]) control.disabled = data.readOnly;
+            els.logDeleteTemplate.disabled = data.readOnly || !activeMeetingTemplateId;
+          } finally { applyingWorkspace = false; }
+        },
+        open(type, id) {
+          if (type === 'plan') { activatePlan(id); selectTab('edit'); }
+          if (type === 'log') { selectedLogDates = new Set([id]); logMultiSelect = false; renderMeetingLogWorkspace(parseAll().today); selectTab('today'); }
+          if (type === 'template') {
+            const template = meetingTemplates.find(item => item.id === id);
+            if (template) {
+              const content = document.createElement('textarea'); content.value = template.content; content.readOnly = true;
+              workspaceClient.show(template.name, '<p>Reusable meeting template. Apply it from Today, or export it from Library.</p>', () => {});
+              workspaceClient.dialog.querySelector('.workspace-content').appendChild(content);
+            }
+          }
+        },
+        parse(text) {
+          const original = els.items.value, selection = selectedScheduleIds;
+          try { els.items.value = text; selectedScheduleIds = null; return parseAll(); }
+          finally { els.items.value = original; selectedScheduleIds = selection; }
+        },
+        current() { return {plan:activePlan(), parsed:parseAll()}; }
+      }).then(client => { workspaceClient = client; renderPlanControls(); client.status(); }).catch(error => {
+        els.save.textContent = 'Workspace unavailable: ' + error.message;
+        els.logEditor.readOnly = true;
+        document.querySelector('.workspace-state').textContent = 'Workspace unavailable: ' + error.message;
+      });
     })();
   </script>
 </body>

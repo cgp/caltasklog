@@ -1,6 +1,8 @@
 # CalTaskLog (CTL)
 
-CalTaskLog is a self-contained, browser-based project planner and meeting logger. A plain-text plan is parsed into seven views: Edit, Today, Gantt, Timeline, Calendar, Groups, and Tasks. The Today view also contains a dated Markdown meeting-log workspace. The application lives entirely in `index.html`; it has no external runtime dependencies and saves plans and meeting notes in browser-local storage.
+CalTaskLog is a static, browser-based project planner and meeting logger. A plain-text plan is parsed into seven views: Edit, Today, Gantt, Timeline, Calendar, Groups, and Tasks. The Today view also contains a dated Markdown meeting-log workspace. It has no external runtime dependencies. Workspaces save to an IndexedDB cache and can sync with an external WebDAV folder or open a read-only HTTPS plan/catalog. Storage services remain outside this project.
+
+The workspace bar provides a searchable document library, connection settings, sync/conflict review, native ZIP backup/restore, and text, Markdown, CSV, and iCalendar import/export. See [Storage and data exchange](STORAGE.md) for the file format, connection requirements, supported conversions, and tests. Host `index.html`, `storage.js`, `transfer.js`, `workspace-ui.js`, `workspace.css`, and `favicon.svg` together on HTTPS or localhost.
 
 ## Defining schedules and events
 
@@ -363,8 +365,8 @@ Edit is the source-of-truth text editor.
 - Typing updates the item count, syntax coloring, schedule list, and warnings.
 - Blank lines, comments, timezone directives, and schedule declarations are excluded from the item count.
 - The protected **Default example** is always available but read-only. **Save as** opens a browser naming dialog and creates an editable named copy; canceling the dialog makes no change.
-- Editable named entries save to browser-local storage after a short debounce. Existing single-editor content is migrated into `My plan` the first time the named-entry feature loads.
-- Storage is device/browser-local; there is no server synchronization.
+- Editable named entries save to the active workspace's IndexedDB cache. Existing browser-local entries are not migrated.
+- Connect an external WebDAV folder for synchronization, or open an HTTPS plan/catalog as read-only. Save and sync failures appear in the workspace status.
 - The last selected app view, Calendar subview, and selected calendars are restored after refresh. Calendar selections are remembered separately for each saved entry.
 
 ### Today
@@ -402,7 +404,7 @@ The full-width meeting-log workspace sits directly below the Today task list.
 - Summary modes can concatenate complete logs chronologically, extract bullets and checkboxes under dynamically detected headings, or combine both into a hybrid output.
 - Extracted items can be grouped by heading or by day. Checkbox items and the rendered/exported table of contents can each be included or omitted.
 - Summaries can be copied or downloaded as Markdown. Exported Markdown includes linked table-of-contents entries when that option is enabled.
-- Meeting logs and templates use separate browser-local storage entries (`caltasklog-meeting-logs-v1` and `caltasklog-meeting-templates-v1`) and remain separate from the timeline plan text.
+- Meeting logs and templates are separate workspace documents and remain separate from timeline plan text. Logs are daily Markdown files; templates have stable IDs and names.
 
 ### Gantt
 
@@ -504,7 +506,7 @@ Timing is calculated as follows:
 
 ## Implementation notes
 
-- The application is a single HTML file with embedded CSS and JavaScript.
+- The parser and views are in `index.html`; the workspace, storage, and interchange code are separate static JavaScript/CSS files with no external runtime dependencies.
 - The configured IANA timezone controls the current date; it defaults to the browser timezone when no directive is present.
 - Dates remain calendar-day values. Optional times are stored separately as nullable minute offsets and appear in Calendar labels when present.
 - Day differences are calculated in whole calendar-day increments.
